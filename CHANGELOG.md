@@ -12,6 +12,8 @@
 
 - Improve performance of the editor (#6388).
 - Remove superfluous search logging (#6401).
+- Refactor `posInNode` utility to `nodeAtPos` and align documentation with
+  behavior (#6399).
 
 # 4.6.0
 
