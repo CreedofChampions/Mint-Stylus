@@ -15,6 +15,8 @@
 - Refactor `posInNode` utility to `nodeAtPos` and align documentation with
   behavior (#6399).
 - Update various (incl. transitive) dependencies.
+- Remove fix for an old `archiver` dependency.
+- Refactor TextPack export to match new `archiver` API.
 
 # 4.6.0
 
