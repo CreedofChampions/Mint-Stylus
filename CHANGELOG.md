@@ -11,6 +11,7 @@
 ## Under the Hood
 
 - Improve performance of the editor (#6388).
+- Remove superfluous search logging (#6401).
 
 # 4.6.0
 
