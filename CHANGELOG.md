@@ -17,6 +17,7 @@
 - Update various (incl. transitive) dependencies.
 - Remove fix for an old `archiver` dependency.
 - Refactor TextPack export to match new `archiver` API.
+- Remove remnant `.tern-project` file.
 
 # 4.6.0
 
