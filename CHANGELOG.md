@@ -8,6 +8,9 @@
   window would not automatically open one (#6391).
 - Update Japanese translations (#6390).
 - Fix snippets syntax and improve nested support (#6389).
+- Fixed a bug that would cause Zettlr to replace a magic quote with a regular
+  quote instead of deleting the text if some text was selected that happened to
+  be adjacent to a magic quote.
 
 ## Under the Hood
 
