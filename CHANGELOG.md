@@ -14,6 +14,7 @@
 - Remove superfluous search logging (#6401).
 - Refactor `posInNode` utility to `nodeAtPos` and align documentation with
   behavior (#6399).
+- Update various (incl. transitive) dependencies.
 
 # 4.6.0
 
