@@ -39,34 +39,6 @@ export default async function environmentCheck (): Promise<void> {
   fixPath()
 
   /**
-   * Contains custom paths that should be present on the process.env.PATH
-   * property for the given operating system as reported by process.platform.
-   *
-   * @deprecated With the addition of `fixPath`, it is highly likely that we do
-   * not need this contraption anymore.
-   */
-  const CUSTOM_PATHS: { [key in NodeJS.Platform]: string[] } = {
-    win32: [],
-    linux: ['/usr/bin'],
-    darwin: [
-      // LaTeX binary directory
-      '/Library/TeX/texbin',
-      // Homebrew default for Intel Macs
-      '/usr/local/bin',
-      // Homebrew default for M1 Macs
-      '/opt/homebrew/bin'
-    ],
-    aix: [],
-    android: [],
-    freebsd: [],
-    openbsd: [],
-    sunos: [],
-    cygwin: [],
-    netbsd: [],
-    haiku: []
-  }
-
-  /**
    * Required directories that must exist on the system in order for certain
    * functionality to work and not bring down Zettlr to its knees on startup.
    *
@@ -81,13 +53,6 @@ export default async function environmentCheck (): Promise<void> {
     path.join(app.getPath('userData'), 'snippets'), // Snippets files
     path.join(app.getPath('userData'), 'lua-filter') // Lua filters
   ]
-
-  /**
-   * Platform specific delimiter (; on Windows, : everywhere else)
-   *
-   * @var {string}
-   */
-  const DELIM = (process.platform === 'win32') ? ';' : ':'
 
   const is64Bit = process.arch === 'x64'
   const isARM64 = process.arch === 'arm64'
@@ -167,25 +132,6 @@ export default async function environmentCheck (): Promise<void> {
   if (process.env.PATH === undefined) {
     process.env.PATH = ''
   }
-
-  // First integrate the additional paths that we need.
-  let tempPATH = process.env.PATH.split(DELIM)
-
-  for (const customPath of CUSTOM_PATHS[process.platform]) {
-    // Check for both trailing and non-trailing slashes (to not add any
-    // directory more than once)
-    let customPathAlt = customPath + '/'
-    if (customPath.endsWith('/')) {
-      customPathAlt = customPath.substring(0, customPath.length - 1)
-    }
-
-    if (!tempPATH.includes(customPath) && !tempPATH.includes(customPathAlt)) {
-      tempPATH.push(customPath)
-    }
-  }
-
-  // Make sure to remove accidental empty strings
-  process.env.PATH = tempPATH.filter(e => e.trim() !== '').join(DELIM)
 
   // Then ensure all required directories exist
   for (const directory of REQUIRED_DIRECTORIES) {

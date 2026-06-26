@@ -17,6 +17,7 @@
 - Zettlr now additionally trusts system certificates when making network
   connections, meaning that custom TLS certificates can be used, e.g., for
   corporate firewalls (#6006; #5271).
+- Removed deprecated path check for the app.
 - Improve performance of the editor (#6388).
 - Remove superfluous search logging (#6401).
 - Refactor `posInNode` utility to `nodeAtPos` and align documentation with
