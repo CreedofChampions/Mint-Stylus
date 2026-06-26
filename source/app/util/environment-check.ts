@@ -14,6 +14,7 @@
 
 import path from 'path'
 import { app } from 'electron'
+import tls from 'tls'
 import { promises as fs } from 'fs'
 import isFile from '../../common/util/is-file'
 import isTraySupported from './is-tray-supported'
@@ -23,6 +24,14 @@ import { runCommand } from './run-command'
 
 export default async function environmentCheck (): Promise<void> {
   console.log('[Application] Performing environment check ...')
+
+  // Ensure that the Node process trusts both its own bundled certificates
+  // (= the default) as well as any system store certificates when making
+  // connections.
+  const bundled = tls.getCACertificates('bundled')
+  const system = tls.getCACertificates('system')
+  tls.setDefaultCACertificates([ ...bundled, ...system ])
+  console.log('[Application] Info: The main process now uses both the bundled Mozilla CA as well as the system CA.')
 
   // This is necessary on macOS and Linux, because GUI applications may not
   // inherit the same PATH environment variable as terminal programs. This is
@@ -191,10 +200,12 @@ export default async function environmentCheck (): Promise<void> {
   // Determine if the platform as Tray support
   try {
     process.env.ZETTLR_IS_TRAY_SUPPORTED = await isTraySupported() ? '1' : '0'
-  } catch (err: any) {
+  } catch (err: unknown) {
     process.env.ZETTLR_IS_TRAY_SUPPORTED = '0'
-    process.env.ZETTLR_TRAY_ERROR = err.message
-    console.warn(err.message)
+    if (err instanceof Error) {
+      process.env.ZETTLR_TRAY_ERROR = err.message
+      console.warn(err.message)
+    }
   }
 
   // Finally, remember whether the updates have been disabled at build time.
