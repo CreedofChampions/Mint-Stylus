@@ -576,7 +576,7 @@ export default class MarkdownEditor extends EventEmitter {
    *
    * @return  {any}           The value of the key
    */
-  getOption (name: string): any {
+  getOption (name: string) {
     const config = this._instance.state.field(configField)
     if (name in config) {
       return config[name as keyof EditorConfiguration]
