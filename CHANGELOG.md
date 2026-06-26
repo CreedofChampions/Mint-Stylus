@@ -11,6 +11,7 @@
 - Fixed a bug that would cause Zettlr to replace a magic quote with a regular
   quote instead of deleting the text if some text was selected that happened to
   be adjacent to a magic quote.
+- The Table of Contents title in the sidebar is now properly reset (#6397).
 
 ## Under the Hood
 
