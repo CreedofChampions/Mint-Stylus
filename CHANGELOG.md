@@ -2,6 +2,8 @@
 
 ## GUI and Functionality
 
+- **Feature**: You can now set the editor theme to use a light or dark
+  appearance independent of the app appearance (#5851).
 - Fixed a regression from 4.6.1 where the full-text search would not search any
   open standalone files (#6387).
 - Fixed an issue on macOS where opening a file from Finder with no open main
