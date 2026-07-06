@@ -1,14 +1,14 @@
 <template>
   <div id="font-license-text">
     <p>
-      Zettlr ships with three font faces, Crimson Text, Liberation, and
+      Mint Stylus ships with three font faces, Crimson Text, Liberation, and
       Inconsolata. To comply with the SIL Open Font License, we provide the full
       license terms here.
     </p>
     <p>
       Below follow the individual Copyright statements for the fonts Crimson Text
       and Liberation. Afterwards follows the text of the SIL Open Font License,
-      which is shared by all fonts used by Zettlr.
+      which is shared by all fonts used by Mint Stylus.
     </p>
     <h2>Crimson Text</h2>
     <p>

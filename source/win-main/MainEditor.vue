@@ -51,6 +51,10 @@ import type { DocumentManagerIPCAPI, DocumentsUpdateContext } from 'source/app/s
 import type { CiteprocProviderIPCAPI } from 'source/app/service-providers/citeproc'
 import type { ProjectInfo } from 'source/common/modules/markdown-editor/plugins/project-info-field'
 import type { FileContentSearchResult } from 'source/app/service-providers/search'
+// AI-CREATED FOR MINT STYLUS: register/unregister this leaf's live editor so the
+// AI surfaces in App.vue can reach the active CodeMirror EditorView imperatively
+// (see ai-panel/active-editor-registry.ts).
+import { registerEditor, unregisterEditor } from './ai-panel/active-editor-registry'
 
 const ipcRenderer = window.ipc
 
@@ -183,6 +187,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (currentEditor !== null) {
     props.persistentStateMap.set(props.file.path, currentEditor.persistentState)
+    // AI-CREATED FOR MINT STYLUS: drop this editor from the active-editor
+    // registry before it is destroyed.
+    unregisterEditor(props.leafId, currentEditor)
     // Clear out the table of contents before unmounting the component.
     windowStateStore.tableOfContents = undefined
     currentEditor.unmount()
@@ -203,6 +210,9 @@ onUpdated(() => {
     // File path has changed -> unmount and remount (duplicate code from
     // onMounted and onBeforeUnmount hooks).
     props.persistentStateMap.set(currentFilePath, currentEditor.persistentState)
+    // AI-CREATED FOR MINT STYLUS: drop the outgoing editor from the registry
+    // before it is unmounted; loadDocument() re-registers the new instance.
+    unregisterEditor(props.leafId, currentEditor)
     currentEditor.unmount()
     loadDocument().catch(err => console.error(err))
   }
@@ -530,6 +540,11 @@ async function loadDocument (): Promise<void> {
 
   mainEditorWrapper.value?.appendChild(newEditor.dom)
   currentEditor = newEditor
+
+  // AI-CREATED FOR MINT STYLUS: expose this leaf's live editor to the AI
+  // surfaces in App.vue (Summarize replace/recover, AI-command). The registry
+  // is keyed by leaf id and resolved via documentTreeStore.lastLeafId.
+  registerEditor(props.leafId, newEditor)
 
   currentEditor.setCompletionDatabase('tags', tags.value)
   currentEditor.setCompletionDatabase('snippets', snippets.value)

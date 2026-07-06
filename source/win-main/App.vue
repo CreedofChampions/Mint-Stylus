@@ -37,6 +37,8 @@
         <!-- AI-CREATED FOR MINT STYLUS -->
         <AIPanel
           v-show="mainSplitViewVisibleComponent === 'aiPanel'"
+          v-on:replace-selection="handleAIReplaceSelection($event)"
+          v-on:recover="handleAIRecover($event)"
         ></AIPanel>
       </template>
       <template #view2>
@@ -173,8 +175,13 @@ import PopoverPandoc from './PopoverPandoc.vue'
 // AI-CREATED FOR MINT STYLUS: AI panel + question bar + AI store
 import AIPanel from './ai-panel/AIPanel.vue'
 import QuestionBar from './ai-panel/QuestionBar.vue'
-import { useAIStore } from '../pinia/ai'
+import { useAIStore, type AIRecoverEntry } from '../pinia/ai'
 import { fiveWordSlugPrompt } from 'source/app/service-providers/ai/prompts'
+// AI-CREATED FOR MINT STYLUS: resolve the active leaf's live CodeMirror editor
+// so the AI surfaces can dispatch changes into it (see active-editor-registry).
+import { getEditorForLeaf } from './ai-panel/active-editor-registry'
+import { type AISelection } from '@common/modules/markdown-editor/plugins/ai-selection-menu'
+import { type EditorView } from '@codemirror/view'
 import { trans } from '@common/i18n-renderer'
 import localiseNumber from '@common/util/localise-number'
 import generateId from '@common/util/generate-id'
@@ -686,6 +693,12 @@ watch(mainSplitViewVisibleComponent, (newValue) => {
 // into the left #view1 slot. We reveal the left pane (fileManagerVisible drives
 // its visibility) so the panel is actually shown, and remember what was there
 // before so closing the panel restores the previous left-pane component.
+// AI-CREATED FOR MINT STYLUS: the selection range the Summarize bubble (or an
+// AI command) captured at invocation time. The panel later emits the chosen
+// replacement text; we apply it over THIS range (and keep it up to date as the
+// range's contents change) rather than the live selection, which may have moved.
+const pendingSummarizeSelection = ref<AISelection|null>(null)
+
 const leftComponentBeforeAI = ref<'fileManager'|'globalSearch'>('fileManager')
 watch(() => aiStore.panelOpen, (isOpen) => {
   if (isOpen) {
@@ -726,7 +739,19 @@ onMounted(() => {
   tasksButton.value = document.querySelector('#toolbar-long-running-tasks')
   pandocButton.value = document.querySelector('#toolbar-pandocDivOrSpan')
 
-  ipcRenderer.on('shortcut', (event, shortcut) => {
+  ipcRenderer.on('shortcut', (event, shortcut, payload?: unknown) => {
+    // AI-CREATED FOR MINT STYLUS: the AI-command menu entries may arrive as a
+    // `shortcut` with an { command } payload (depending on how the
+    // menu-command-handlers seam forwards them). Handle that here in addition to
+    // the dedicated `ai-command` channel registered below.
+    if (shortcut === 'ai-command') {
+      const preset = extractCommandPreset(payload)
+      if (preset !== undefined) {
+        runAICommandPreset(preset)
+      }
+      return
+    }
+
     if (shortcut === 'toggle-sidebar') {
       configStore.setConfigValue('window.sidebarVisible', !sidebarVisible.value)
     } else if (shortcut === 'insert-id') {
@@ -787,6 +812,27 @@ onMounted(() => {
           leafId: lastLeafId.value
         }
       } as DocumentManagerIPCAPI).catch(err => console.error(err))
+    }
+  })
+
+  // AI-CREATED FOR MINT STYLUS -----------------------------------------------
+  //
+  // The AI selection bubble (a central CM6 extension with no access to the Pinia
+  // store) re-broadcasts the user's selection as DOM CustomEvents on `window`.
+  // We listen here, remember the exact {from,to,text} so we can later replace
+  // precisely that range, and drive the AI store.
+  window.addEventListener('mint-ai-summarize', handleSummarizeEvent as EventListener)
+  window.addEventListener('mint-ai-command', handleCommandEvent as EventListener)
+
+  // The AI-command menu entries run the main-process `ai-command` command, which
+  // forwards to the renderer. We accept it on a dedicated `ai-command` channel
+  // AND (defensively) as a `shortcut` payload, since the exact channel is owned
+  // by the menu-command-handlers seam. Both resolve the current selection (or the
+  // whole page) and run the command through the store.
+  ipcRenderer.on('ai-command', (_event, payload?: unknown) => {
+    const preset = extractCommandPreset(payload)
+    if (preset !== undefined) {
+      runAICommandPreset(preset)
     }
   })
 
@@ -1010,6 +1056,182 @@ async function handleAskQuestion (question: string): Promise<void> {
   //    left-pane AI panel becoming visible.
   aiStore.openPanel('conversation')
   await aiStore.askConversation(trimmed)
+}
+
+/**
+ * Resolves the live CodeMirror EditorView backing the currently-active leaf, or
+ * undefined when the active leaf has no Markdown editor mounted (e.g. it is
+ * showing an image/PDF viewer, or nothing is open). The active leaf is the one
+ * the document tree store last focused.
+ *
+ * @return  {import('@codemirror/view').EditorView|undefined}  The active view.
+ */
+function activeEditorView (): EditorView|undefined {
+  const editor = getEditorForLeaf(documentTreeStore.lastLeafId)
+  return editor?.instance
+}
+
+/**
+ * Normalises the various payload shapes an `ai-command` message may arrive in
+ * (a bare preset string, or an `{ command }` object) into a non-empty preset
+ * string, or undefined when the payload carries no usable preset.
+ *
+ * @param   {unknown}          payload  The raw IPC payload.
+ *
+ * @return  {string|undefined}          The preset name, or undefined.
+ */
+function extractCommandPreset (payload: unknown): string|undefined {
+  let preset: unknown
+  if (typeof payload === 'string') {
+    preset = payload
+  } else if (payload !== null && typeof payload === 'object' && 'command' in payload) {
+    preset = (payload as { command: unknown }).command
+  }
+  return typeof preset === 'string' && preset.length > 0 ? preset : undefined
+}
+
+/**
+ * Handles the `mint-ai-summarize` DOM CustomEvent dispatched by the AI selection
+ * bubble. Remembers the exact captured range so a chosen rewrite can later be
+ * applied over it, then runs the Summarize flow through the store (which opens
+ * the panel and requests the rewrite options).
+ *
+ * @param  {CustomEvent<AISelection>}  event  The selection payload.
+ */
+function handleSummarizeEvent (event: CustomEvent<AISelection>): void {
+  const selection = event.detail
+  if (selection === undefined || selection.text.trim() === '') {
+    return
+  }
+  pendingSummarizeSelection.value = { ...selection }
+  aiStore.runSummarize(selection.text).catch(err => console.error('AI Summarize failed', err))
+}
+
+/**
+ * Handles the `mint-ai-command` DOM CustomEvent dispatched by the AI selection
+ * bubble's "Command" button. We remember the range (so a command that produces
+ * a replacement could reuse it) and open the panel in command mode. The concrete
+ * command preset is chosen from the AI menu; here we simply surface the panel so
+ * the user can pick/run a command against the captured selection.
+ *
+ * @param  {CustomEvent<AISelection>}  event  The selection payload.
+ */
+function handleCommandEvent (event: CustomEvent<AISelection>): void {
+  const selection = event.detail
+  if (selection === undefined || selection.text.trim() === '') {
+    return
+  }
+  pendingSummarizeSelection.value = { ...selection }
+  aiStore.openPanel('command')
+}
+
+/**
+ * Runs a named AI command preset (from the AI menu, e.g. `SHORTEN`,
+ * `CHALLENGE_IDEA`) against the current editor selection, falling back to the
+ * whole page when there is no selection. The whole document is always passed as
+ * page context. All model work happens in main behind the store.
+ *
+ * @param  {string}  preset  The command preset name.
+ */
+function runAICommandPreset (preset: string): void {
+  const view = activeEditorView()
+  if (view === undefined) {
+    // Nothing to act upon (no Markdown editor active) — still open the panel so
+    // the user gets feedback rather than a silent no-op.
+    aiStore.openPanel('command')
+    return
+  }
+
+  const sel = view.state.selection.main
+  const pageContext = view.state.sliceDoc()
+  let input: string
+  if (!sel.empty) {
+    input = view.state.sliceDoc(sel.from, sel.to)
+    // Remember the range so a future "apply" could target it.
+    pendingSummarizeSelection.value = { from: sel.from, to: sel.to, text: input }
+  } else {
+    input = pageContext
+    pendingSummarizeSelection.value = null
+  }
+
+  aiStore.runCommand(preset, input, pageContext).catch(err => console.error(`AI command "${preset}" failed`, err))
+}
+
+/**
+ * Applies a chosen Summarize rewrite to the editor. The AIPanel emits the chosen
+ * replacement text; App.vue owns the authoritative {from,to} of the pending
+ * selection. We stash the original text onto the store's recover stack BEFORE
+ * dispatching (so it can be recovered), dispatch the change, and advance the
+ * pending range to cover the freshly-inserted text so a subsequent option
+ * replaces the previous one rather than stale offsets.
+ *
+ * @param  {string}  insert  The chosen replacement text.
+ */
+function handleAIReplaceSelection (insert: string): void {
+  const pending = pendingSummarizeSelection.value
+  const view = activeEditorView()
+  if (pending === null || view === undefined) {
+    return
+  }
+
+  const docLength = view.state.doc.length
+  // Clamp the remembered range to the current document bounds; the user may have
+  // edited elsewhere since the selection was captured.
+  const from = Math.min(pending.from, docLength)
+  const to = Math.min(pending.to, docLength)
+  if (from > to) {
+    return
+  }
+
+  const original = view.state.sliceDoc(from, to)
+
+  // Stash the original so it can be recovered. The stored {from,to} describes the
+  // range the NEW text will occupy after this dispatch, so Recover can overwrite
+  // exactly that with the original.
+  aiStore.pushSummarizeReplacement({ from, to: from + insert.length, original })
+
+  view.dispatch({ changes: { from, to, insert } })
+
+  // Advance the pending range so a further option click replaces the text we just
+  // inserted, not the now-stale original span.
+  pendingSummarizeSelection.value = { from, to: from + insert.length, text: insert }
+
+  view.focus()
+}
+
+/**
+ * Recovers a previously-replaced original. The AIPanel emits the stashed entry;
+ * we dispatch the reverse change (re-inserting `entry.original` over the range
+ * the replacement now occupies) and pop the store's recover stack. If the popped
+ * entry is not the one clicked (the stack is LIFO), we still reverse the clicked
+ * entry's range — the panel offers the most-recent entry first.
+ *
+ * @param  {AIRecoverEntry}  entry  The stashed original to restore.
+ */
+function handleAIRecover (entry: AIRecoverEntry): void {
+  const view = activeEditorView()
+  if (view === undefined) {
+    return
+  }
+
+  const docLength = view.state.doc.length
+  const from = Math.min(entry.from, docLength)
+  const to = Math.min(entry.to, docLength)
+  if (from > to) {
+    return
+  }
+
+  view.dispatch({ changes: { from, to, insert: entry.original } })
+
+  // Pop the recover stack. The panel presents the most-recent entry first, which
+  // is the top of the LIFO stack, so recoverLast() drops the entry we just
+  // reversed in the common case.
+  aiStore.recoverLast()
+
+  // Keep the pending range coherent for any follow-up replace.
+  pendingSummarizeSelection.value = { from, to: from + entry.original.length, text: entry.original }
+
+  view.focus()
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

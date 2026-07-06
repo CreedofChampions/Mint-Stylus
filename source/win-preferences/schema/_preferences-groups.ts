@@ -18,6 +18,7 @@
  */
 export enum PreferencesGroups {
   Advanced,
+  AI,
   Appearance,
   Autocorrect,
   Citations,

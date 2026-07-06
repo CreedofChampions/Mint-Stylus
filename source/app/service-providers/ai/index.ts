@@ -85,6 +85,46 @@ const KEY_STORE_FILE = 'ai-keys.json'
 const STYLE_FILE = 'mint-style.md'
 
 /**
+ * The default contents written to the "Write in My Style" file the first time
+ * the provider boots (when no file yet exists). A short, editable scaffold so
+ * "Write in My Style" is never empty — the user replaces the example-filled
+ * placeholders with their own preferences.
+ */
+const DEFAULT_STYLE_TEMPLATE = [
+  '# Write in My Style',
+  '',
+  'This file describes how you want the AI to write. Edit each section below to',
+  'match your own voice — everything here is just an example to get you started.',
+  '',
+  '## Voice',
+  '',
+  '- Warm but direct; sound like a knowledgeable friend, not a corporate memo.',
+  '- Write in the first person when it fits; use "you" to address the reader.',
+  '',
+  '## Sentence length',
+  '',
+  '- Favour short, punchy sentences. Vary the rhythm; avoid long run-ons.',
+  '- Break a complex idea into two sentences rather than one dense one.',
+  '',
+  '## Vocabulary',
+  '',
+  '- Plain, concrete words over jargon. Explain a technical term the first time.',
+  '- Prefer strong verbs over adverbs (e.g. "sprinted", not "ran quickly").',
+  '',
+  '## Formatting',
+  '',
+  '- Use Markdown headings to structure longer answers.',
+  '- Lean on bullet lists for options and steps; keep paragraphs to 3–4 lines.',
+  '',
+  '## Things to avoid',
+  '',
+  '- No filler openers ("In today\'s fast-paced world…").',
+  '- No hedging clichés ("it depends", "there is no one-size-fits-all").',
+  '- Do not overuse bold text or exclamation marks.',
+  ''
+].join('\n')
+
+/**
  * The on-disk key-store shape. Each value is either a base64-encoded encrypted
  * buffer, or — when encryption is unavailable — a plaintext key flagged with a
  * sentinel prefix (see PLAINTEXT_PREFIX) so we never silently treat a plaintext
@@ -209,6 +249,37 @@ export default class AIProvider extends ProviderContract {
 
     if (!safeStorage.isEncryptionAvailable()) {
       this._logger.warning('[AIProvider] safeStorage encryption is NOT available on this platform. API keys will be stored in plaintext under userData. Consider configuring a system keyring.')
+    }
+
+    // Ensure a default "Write in My Style" file exists so the feature is never
+    // empty on a fresh install. We honour a configured styleFilePath if the
+    // sibling `ai` config group provides one, otherwise fall back to the
+    // userData default. Only write when the target does not already exist —
+    // never clobber a file the user has authored.
+    await this._ensureDefaultStyleFile()
+  }
+
+  /**
+   * Write the default style-guide template to the style file if (and only if) it
+   * does not already exist. Best-effort: a failure here is logged but never
+   * blocks boot, since the AI path already tolerates an empty/absent style file.
+   */
+  private async _ensureDefaultStyleFile (): Promise<void> {
+    const target = this._resolveStyleFile()
+    try {
+      await fs.access(target)
+      // Already exists — leave the user's file untouched.
+      return
+    } catch {
+      // Does not exist (or is unreadable): write the default below.
+    }
+
+    try {
+      await fs.writeFile(target, DEFAULT_STYLE_TEMPLATE, { encoding: 'utf-8' })
+      this._logger.info(`[AIProvider] Wrote default "Write in My Style" template to ${target}`)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      this._logger.warning(`[AIProvider] Could not write the default style file at ${target}: ${message}`)
     }
   }
 
@@ -561,7 +632,13 @@ export default class AIProvider extends ProviderContract {
       : conversation.slice(0, conversation.length - 1 - lastUserIndex)
     const finalUser = preamble.filter(m => m.role === 'user')
 
-    return [ ...preambleSystem, ...earlierTurns, ...finalUser ]
+    // If the latest user turn explicitly asks to "search", ground the answer by
+    // injecting a web-search RAG block as an additional system message BEFORE
+    // the model call. Never throws — degrades to a short unavailable note.
+    const searchContext = await this._maybeBuildSearchContext(conversation)
+    const searchSystem = searchContext !== undefined ? [ searchContext ] : []
+
+    return [ ...preambleSystem, ...searchSystem, ...earlierTurns, ...finalUser ]
   }
 
   /**
@@ -682,6 +759,61 @@ export default class AIProvider extends ProviderContract {
   // ==========================================================================
 
   /**
+   * Whole-word, case-insensitive test for the literal word "search" in a user
+   * turn. Only an explicit "search" mention triggers RAG grounding — this keeps
+   * the feature cheap (no search on every chat) and predictable.
+   */
+  private _mentionsSearch (text: string): boolean {
+    return /\bsearch\b/i.test(text)
+  }
+
+  /**
+   * If the latest user turn explicitly asks to "search", run a web search on it
+   * and return a ready-to-inject system message carrying the formatted,
+   * URL-bearing RAG block. Returns `undefined` when no search word is present.
+   *
+   * This never throws: if no search key is configured, or the search errors /
+   * quota-exhausts, a short "(web search unavailable)" system note is returned
+   * instead so the chat still completes (just ungrounded).
+   */
+  private async _maybeBuildSearchContext (messages: ChatMessage[]): Promise<ChatMessage | undefined> {
+    // Only consider the latest user turn (search is per-turn, not per-history).
+    const lastUser = [ ...messages ].reverse().find(m => m.role === 'user')
+    const query = typeof lastUser?.content === 'string' ? lastUser.content.trim() : ''
+    if (query.length === 0 || !this._mentionsSearch(query)) {
+      return undefined
+    }
+
+    const configuredProvider = this._readConfig<WebSearchProvider>('ai.searchProvider')
+    const searchProvider: WebSearchProvider = configuredProvider ?? 'tavily'
+
+    try {
+      // Search keys live under a distinct namespace (see _search).
+      const apiKey = await this._decryptKey(`search:${searchProvider}`)
+
+      // Tavily and Brave require a key; DuckDuckGo does not. Degrade gracefully
+      // rather than firing a guaranteed-to-fail request.
+      if (apiKey === '' && searchProvider !== 'duckduckgo') {
+        this._logger.warning(`[AIProvider] Chat requested a web search but no key is configured for "${searchProvider}".`)
+        return {
+          role: 'system',
+          content: '(web search unavailable: no search provider key is configured. Answer from your own knowledge and note that live web search was unavailable.)'
+        }
+      }
+
+      const response = await runSearch({ provider: searchProvider, apiKey, query })
+      return { role: 'system', content: response.block }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      this._logger.warning(`[AIProvider] In-chat web search failed; continuing without grounding: ${message}`)
+      return {
+        role: 'system',
+        content: '(web search unavailable: the search request failed. Answer from your own knowledge and note that live web search was unavailable.)'
+      }
+    }
+  }
+
+  /**
    * Run a web search on behalf of the AI and return the structured response +
    * ready-to-inject RAG block. The search key is decrypted here and never
    * leaves the main process.
@@ -707,11 +839,24 @@ export default class AIProvider extends ProviderContract {
   // ==========================================================================
 
   /**
+   * Resolve the absolute path to the "Write in My Style" file. A configured
+   * `ai.styleFilePath` (added by a sibling agent) wins; otherwise fall back to
+   * the userData default computed in the constructor.
+   */
+  private _resolveStyleFile (): string {
+    const configured = this._readConfig<string>('ai.styleFilePath')
+    if (typeof configured === 'string' && configured.trim().length > 0) {
+      return configured.trim()
+    }
+    return this._styleFile
+  }
+
+  /**
    * Read the "Write in My Style" guide. Returns '' if the file does not exist.
    */
   private async _getStyle (): Promise<string> {
     try {
-      return await fs.readFile(this._styleFile, { encoding: 'utf-8' })
+      return await fs.readFile(this._resolveStyleFile(), { encoding: 'utf-8' })
     } catch (err: any) {
       if (err?.code === 'ENOENT') {
         return ''
@@ -729,7 +874,7 @@ export default class AIProvider extends ProviderContract {
    */
   private async _setStyle (content: string): Promise<{ saved: boolean }> {
     const text = typeof content === 'string' ? content : ''
-    await fs.writeFile(this._styleFile, text, { encoding: 'utf-8' })
+    await fs.writeFile(this._resolveStyleFile(), text, { encoding: 'utf-8' })
     return { saved: true }
   }
 }

@@ -68,7 +68,7 @@ const configStore = useConfigStore()
 const currentTab = ref(0)
 const tabs: WindowTab[] = [
   {
-    label: trans('About Zettlr'),
+    label: trans('About Mint Stylus'),
     controls: 'tab-general',
     id: 'tab-general-control',
     icon: 'info-standard'
@@ -109,7 +109,7 @@ const windowTitle = computed(() => {
   if (process.platform === 'darwin') {
     return tabs[currentTab.value].label
   } else {
-    return trans('About Zettlr') + ' ' + configStore.config.version
+    return trans('About Mint Stylus') + ' ' + configStore.config.version
   }
 })
 </script>

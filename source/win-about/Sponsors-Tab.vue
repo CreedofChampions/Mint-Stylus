@@ -1,18 +1,14 @@
 <template>
   <div id="sponsors-tab">
     <p>
-      A special thanks goes out to the sponsors of Zettlr. Become one yourself
-      and support us on our <a href="https://www.patreon.com/zettlr">Patreon page</a>!
+      Mint Stylus is a fork of <a href="https://www.zettlr.com/">Zettlr</a>,
+      licensed under the GNU GPL v3. A special thanks goes out to the Zettlr
+      project and its sponsors, whose work Mint Stylus is built upon.
     </p>
-    <div id="sponsors-container">
-      <div v-for="sponsor in sponsors" v-bind:key="sponsor.id" class="sponsor">
-        <img src="./assets/medal_sponsor.svg" v-bind:title="sponsor.name">
-        <p>
-          {{ sponsor.name }}
-          <a v-if="sponsor.link" v-bind:href="sponsor.link">{{ sponsor.link }}</a>
-        </p>
-      </div>
-    </div>
+    <p>
+      Please consider supporting the upstream Zettlr project on their
+      <a href="https://www.patreon.com/zettlr">Patreon page</a>.
+    </p>
   </div>
 </template>
 
@@ -26,31 +22,11 @@
  * Maintainer:      Hendrik Erz
  * License:         GNU GPL v3
  *
- * Description:     This tab displays the Patreon sponsors.
+ * Description:     This tab attributes the upstream Zettlr project, which
+ *                  Mint Stylus is a fork of.
  *
  * END HEADER
  */
-
-import ky from 'ky'
-import { ref } from 'vue'
-
-interface Sponsor {
-  id: string
-  name: string
-  link?: string
-}
-
-const sponsors = ref<Sponsor[]>([])
-
-ky('https://zettlr.com/api/sponsors')
-  .then(response => {
-    response.json<Sponsor[]>()
-      .then(res => {
-        sponsors.value = res
-      })
-      .catch(err => console.error(err))
-  })
-  .catch(e => console.error(e))
 </script>
 
 <style lang="less">
@@ -58,23 +34,6 @@ div#sponsors-tab {
 
   p {
     margin: revert;
-  }
-
-  div#sponsors-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
-
-    div.sponsor {
-      flex: 1;
-      width: 150px;
-      text-align: center;
-      margin: 10px;
-
-      img {
-        max-width: 60%;
-      }
-    }
   }
 }
 </style>

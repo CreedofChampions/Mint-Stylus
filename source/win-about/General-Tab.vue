@@ -1,7 +1,7 @@
 <template>
   <div id="about-general">
     <h1 id="main-heading">
-      Zettlr {{ configStore.config.version }}
+      Mint Stylus {{ configStore.config.version }}
     </h1>
     <p id="uuid">
       UUID: {{ configStore.config.uuid }}
@@ -88,10 +88,10 @@ import { useConfigStore } from 'source/pinia'
 
 const configStore = useConfigStore()
 
-const dialogIntro = trans('Zettlr is a project by Hendrik Erz, licensed under the GNU GPL v3 license. It is Open Source, free of charge and based upon the Electron framework. Zettlr would like to thank the developers of Electron, the Node.js framework and the CodeMirror editor for their work. Without them, Zettlr would not be possible. Below you can find all projects that Zettlr uses.')
-const CSLInfo = trans('Zettlr makes use of citeproc to display citations directly in the editor. To this end, Zettlr uses the CitationStyleLanguage (CSL) language and style files. The files have been shipped unaltered with author metadata. More information:')
-const nodeTrademark = trans('All logos and brand names are subject to their rightful owners. Besides using their code, Zettlr is in no way affiliated with any of these projects. Node.js is a trademark of Joyent, Inc.')
-const LanguageToolInfo = trans('Zettlr offers an integration with LanguageTool.org, a service provided by LanguageTooler GmbH. Using this service requires an internet connection and is subject to the privacy policy of LanguageTooler GmbH or the corresponding server that you use.')
+const dialogIntro = trans('Mint Stylus is a fork of Zettlr, a project by Hendrik Erz, and is licensed under the GNU GPL v3 license. It is Open Source, free of charge and based upon the Electron framework. Mint Stylus would like to thank the Zettlr project and the developers of Electron, the Node.js framework and the CodeMirror editor for their work. Without them, Mint Stylus would not be possible. Below you can find all projects that Mint Stylus uses.')
+const CSLInfo = trans('Mint Stylus makes use of citeproc to display citations directly in the editor. To this end, Mint Stylus uses the CitationStyleLanguage (CSL) language and style files. The files have been shipped unaltered with author metadata. More information:')
+const nodeTrademark = trans('All logos and brand names are subject to their rightful owners. Besides using their code, Mint Stylus is in no way affiliated with any of these projects. Node.js is a trademark of Joyent, Inc.')
+const LanguageToolInfo = trans('Mint Stylus offers an integration with LanguageTool.org, a service provided by LanguageTooler GmbH. Using this service requires an internet connection and is subject to the privacy policy of LanguageTooler GmbH or the corresponding server that you use.')
 const ltPrivacyLinkLabel = trans('View the Privacy Policy by LanguageTooler GmbH')
 </script>
 
