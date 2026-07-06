@@ -31,7 +31,9 @@ export default class TutorialOpen extends ZettlrCommand {
    */
   async run (event: string, _arg: any): Promise<any> {
     const tutorialPath = path.join(__dirname, 'tutorial')
-    const targetPath = path.join(app.getPath('documents'), 'Zettlr Tutorial')
+    // Mint Stylus uses its own tutorial folder so it never collides with an
+    // installed Zettlr's "Zettlr Tutorial" directory on the same machine.
+    const targetPath = path.join(app.getPath('documents'), 'Mint Stylus Tutorial')
     const availableLanguages = await this._app.fsal.readdir(tutorialPath)
 
     const candidates = availableLanguages
