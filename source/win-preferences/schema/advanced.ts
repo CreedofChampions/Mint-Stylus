@@ -43,7 +43,7 @@ export function getAdvancedFields (config: ConfigOptions): PreferencesFieldset[]
   return [
     {
       title: trans('Pattern for new file names'),
-      infoString: trans('Zettlr uses this pattern to generate new filenames. By default, it just uses a new Zettelkasten ID.'),
+      infoString: trans('Mint Stylus uses this pattern to generate new filenames. By default, it just uses a new Zettelkasten ID.'),
       group: PreferencesGroups.Advanced,
       help: undefined, // TODO
       fields: [
@@ -142,7 +142,7 @@ export function getAdvancedFields (config: ConfigOptions): PreferencesFieldset[]
               {
                 type: 'form-text',
                 display: 'plain',
-                contents: 'Zettlr'
+                contents: 'Mint Stylus'
               }
             ],
             // Image files
@@ -163,7 +163,7 @@ export function getAdvancedFields (config: ConfigOptions): PreferencesFieldset[]
               {
                 type: 'select',
                 options: {
-                  'zettlr': 'Zettlr',
+                  'zettlr': 'Mint Stylus',
                   'system': trans('System default')
                 },
                 model: 'files.images.openWith'
@@ -187,7 +187,7 @@ export function getAdvancedFields (config: ConfigOptions): PreferencesFieldset[]
               {
                 type: 'select',
                 options: {
-                  'zettlr': 'Zettlr',
+                  'zettlr': 'Mint Stylus',
                   'system': trans('System default')
                 },
                 model: 'files.pdf.openWith'
@@ -308,7 +308,7 @@ export function getAdvancedFields (config: ConfigOptions): PreferencesFieldset[]
     },
     {
       title: trans('Watchdog polling'),
-      infoString: trans('In rare instances, Zettlr may be unable to check for changes to your files. In that case, you can try activating watchdog polling. Do not use this option unless necessary: Polling is very slow and resource-heavy.'),
+      infoString: trans('In rare instances, Mint Stylus may be unable to check for changes to your files. In that case, you can try activating watchdog polling. Do not use this option unless necessary: Polling is very slow and resource-heavy.'),
       group: PreferencesGroups.Advanced,
       help: undefined, // TODO
       fields: [

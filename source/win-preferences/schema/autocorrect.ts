@@ -57,7 +57,7 @@ export function getAutocorrectFields (): PreferencesFieldset[] {
     },
     {
       title: trans('Magic Quotes'),
-      infoString: trans('This setting allows you to pick which typographical quotes Zettlr will insert when you insert a quotation mark. Requires Autocorrect to be enabled.'),
+      infoString: trans('This setting allows you to pick which typographical quotes Mint Stylus will insert when you insert a quotation mark. Requires Autocorrect to be enabled.'),
       group: PreferencesGroups.Autocorrect,
       fields: [
         {

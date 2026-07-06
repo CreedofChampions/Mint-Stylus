@@ -369,10 +369,10 @@ const activeFile = computed(() => documentTreeStore.lastLeafActiveFile)
 const shouldCountChars = computed<boolean>(() => configStore.config.editor.countChars)
 const windowTitle = computed<string>(() => {
   if (activeFile.value === undefined) {
-    return 'Zettlr'
+    return 'Mint Stylus'
   }
 
-  return `Zettlr - ${getDocumentTitle(activeFile.value)}`
+  return `Mint Stylus - ${getDocumentTitle(activeFile.value)}`
 })
 
 // Simple state machine to trigger which of the three shows up when. Below's the

@@ -19,7 +19,7 @@ import { PreferencesGroups } from './_preferences-groups'
 export function getGeneralFields (appLangOptions: Record<string, string>): PreferencesFieldset[] {
   const updateSetting: PreferencesFieldset = {
     title: trans('Updates'),
-    infoString: trans('If you installed Zettlr via a package manager, you should disable this.'),
+    infoString: trans('If you installed Mint Stylus via a package manager, you should disable this.'),
     group: PreferencesGroups.General,
     help: undefined, // TODO
     fields: [
@@ -34,7 +34,7 @@ export function getGeneralFields (appLangOptions: Record<string, string>): Prefe
   const updatesDisabledSetting: PreferencesFieldset = {
     title: trans('Updates'),
     group: PreferencesGroups.General,
-    infoString: trans('Updates for this binary of Zettlr have been disabled at build time. This is a choice made by the packager and is common when Zettlr is being distributed via package managers. In these cases, Zettlr will be updated through your package manager.'),
+    infoString: trans('Updates for this binary of Mint Stylus have been disabled at build time. This is a choice made by the packager and is common when Mint Stylus is being distributed via package managers. In these cases, Mint Stylus will be updated through your package manager.'),
     fields: []
   }
 
@@ -52,7 +52,7 @@ export function getGeneralFields (appLangOptions: Record<string, string>): Prefe
     },
     {
       title: trans('Autosave'),
-      infoString: trans('Should Zettlr automatically save changes to your documents?'),
+      infoString: trans('Should Mint Stylus automatically save changes to your documents?'),
       group: PreferencesGroups.General,
       help: undefined, // TODO
       fields: [

@@ -21,7 +21,7 @@ export function getZettelkastenFields (_config: ConfigOptions): PreferencesField
   return [
     {
       title: trans('Zettelkasten IDs'),
-      infoString: trans('Specify how Zettlr generates new file IDs for your Zettelkasten, and enable Zettlr to detect them.'),
+      infoString: trans('Specify how Mint Stylus generates new file IDs for your Zettelkasten, and enable Mint Stylus to detect them.'),
       group: PreferencesGroups.Zettelkasten,
       help: undefined, // TODO
       fields: [
@@ -89,7 +89,7 @@ export function getZettelkastenFields (_config: ConfigOptions): PreferencesField
     },
     {
       title: trans('Zettelkasten folder'),
-      infoString: trans('Choosing a Zettelkasten folder allows Zettlr to automatically create files when following links to not-yet-existing files. This folder must be open as a Workspace in Zettlr.'),
+      infoString: trans('Choosing a Zettelkasten folder allows Mint Stylus to automatically create files when following links to not-yet-existing files. This folder must be open as a Workspace in Mint Stylus.'),
       group: PreferencesGroups.Zettelkasten,
       fields: [
         {

@@ -48,7 +48,7 @@ import { onUnmounted, ref, watch } from 'vue'
 
 const ipcRenderer = window.ipc
 
-const cssExplanation = trans('Here you can override the styles of Zettlr to customise it even further.')
+const cssExplanation = trans('Here you can override the styles of Mint Stylus to customise it even further.')
 const cssWarning = trans('Attention: This file overrides all CSS directives! Never alter the geometry of elements, otherwise the app may expose unwanted behaviour!')
 const saveButtonLabel = trans('Save')
 

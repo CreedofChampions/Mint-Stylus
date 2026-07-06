@@ -41,7 +41,7 @@ export function showNativeNotification (
   }
 
   const notification = new Notification({
-    title: title ?? 'Zettlr',
+    title: title ?? 'Mint Stylus',
     body: message,
     silent: true,
     icon: defaultIcon,

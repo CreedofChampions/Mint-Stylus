@@ -91,7 +91,7 @@ export function getAppearanceFields (config: ConfigOptions): PreferencesFieldset
               backgroundColor: '#1cb27e',
               name: 'Berlin',
               fontFamily: 'inherit',
-              description: 'An all-time classic: This theme has been part of Zettlr since the very beginning. A modern theme featuring the signatory green color and a sans-serif font.'
+              description: 'An all-time classic: This theme has been part of Mint Stylus since the very beginning. A modern theme featuring the signatory green color and a sans-serif font.'
             },
             frankfurt: {
               textColor: 'white',
