@@ -22,8 +22,8 @@
  * END HEADER
  */
 
-import { EditorView, showTooltip, type Tooltip } from '@codemirror/view'
-import { StateField, type EditorState, type Extension } from '@codemirror/state'
+import { EditorView, ViewPlugin, showTooltip, type Tooltip } from '@codemirror/view'
+import { StateField, type EditorState, type Extension, type SelectionRange } from '@codemirror/state'
 import { trans } from '@common/i18n-renderer'
 
 /**
@@ -75,17 +75,61 @@ function getSelection (state: EditorState): AISelection|undefined {
 }
 
 /**
+ * Computes the document position at which the bubble should be anchored.
+ * Normally that is the selection head (so the bubble tracks the caret end).
+ * But when the head sits outside of what is currently on screen — most
+ * prominently after Ctrl+A/Cmd+A, where the head lands at the very END of the
+ * document, potentially thousands of lines below the fold — anchoring there
+ * would render the bubble at the bottom of the document (or not at all). In
+ * that case the anchor is clamped into the currently visible line range, so
+ * the bubble appears where the user is actually looking, while always staying
+ * within the selection itself.
+ *
+ * NOTE: `view.viewport`/`view.visibleRanges` include CodeMirror's off-screen
+ * rendering margin (~1000px beyond the screen), so the truly visible lines are
+ * derived from the scroll geometry instead (Marijn's recommended recipe).
+ *
+ * @param   {SelectionRange}        sel   The main selection range
+ * @param   {EditorView|undefined}  view  The editor view, if already available
+ *
+ * @return  {number}                      The anchor position for the tooltip
+ */
+function computeAnchorPos (sel: SelectionRange, view: EditorView|undefined): number {
+  if (view === undefined) {
+    // No view yet (initial state creation) -> best effort: the head.
+    return sel.head
+  }
+
+  const scrollRect = view.scrollDOM.getBoundingClientRect()
+  const firstVisible = view.lineBlockAtHeight(scrollRect.top - view.documentTop).from
+  const lastVisible = view.lineBlockAtHeight(scrollRect.bottom - view.documentTop).to
+
+  if (sel.head >= firstVisible && sel.head <= lastVisible) {
+    // The head is on screen: anchor there, as usual.
+    return sel.head
+  }
+
+  // The head is off screen: clamp the anchor into the intersection of the
+  // visible range and the selection (the selection always intersects the
+  // screen here, because a Select-All-like selection spans past it).
+  return Math.min(Math.max(sel.from, firstVisible), Math.min(sel.to, lastVisible))
+}
+
+/**
  * Builds the (zero or one) tooltips describing the AI selection bubble. When
  * the selection is non-empty, a single tooltip is anchored at the selection
- * head and forced to render above the text so it does not obscure the lines the
- * user is reading below.
+ * head (clamped into the visible viewport, see computeAnchorPos) and forced to
+ * render above the text so it does not obscure the lines the user is reading
+ * below.
  *
  * @param   {EditorState}              state     The current editor state
  * @param   {AISelectionMenuHandlers}  handlers  The injected callbacks
+ * @param   {EditorView|undefined}     view      The editor view (for viewport
+ *                                               clamping), if available
  *
  * @return  {Tooltip[]}                          Zero or one tooltip
  */
-function getAiSelectionTooltips (state: EditorState, handlers: AISelectionMenuHandlers): Tooltip[] {
+function getAiSelectionTooltips (state: EditorState, handlers: AISelectionMenuHandlers, view: EditorView|undefined): Tooltip[] {
   const selection = getSelection(state)
   if (selection === undefined) {
     return []
@@ -94,8 +138,10 @@ function getAiSelectionTooltips (state: EditorState, handlers: AISelectionMenuHa
   const mainSel = state.selection.main
 
   return [{
-    // Anchor the bubble at the selection's head so it tracks the caret end.
-    pos: mainSel.head,
+    // Anchor the bubble at the selection's head so it tracks the caret end;
+    // if the head is off screen (e.g. Select All), clamp the anchor into the
+    // visible viewport so the bubble shows where the user is looking.
+    pos: computeAnchorPos(mainSel, view),
     // Render above the selection: this keeps the text below fully visible so
     // the bubble never blocks reading (a tooltip, not a modal).
     above: true,
@@ -190,19 +236,36 @@ const aiSelectionMenuTheme = EditorView.baseTheme({
  * @return  {Extension}                          The composed extension
  */
 export function aiSelectionMenu (handlers: AISelectionMenuHandlers): Extension {
+  // The tooltip list is derived in a StateField, but clamping the bubble into
+  // the visible viewport requires the EditorView (scroll geometry lives on the
+  // view, not the state). This factory is called once per editor instance (in
+  // getMarkdownExtensions), so a per-closure reference is safe: this tiny
+  // ViewPlugin only records the view so the field's compute functions can read
+  // the viewport when (re)computing the tooltip anchor.
+  let currentView: EditorView|undefined
+  const viewCapture = ViewPlugin.define(view => {
+    currentView = view
+    return {
+      destroy () {
+        currentView = undefined
+      }
+    }
+  })
+
   const aiSelectionMenuField = StateField.define<readonly Tooltip[]>({
     create (state) {
-      return getAiSelectionTooltips(state, handlers)
+      return getAiSelectionTooltips(state, handlers, currentView)
     },
 
     update (tooltips, transaction) {
-      return getAiSelectionTooltips(transaction.state, handlers)
+      return getAiSelectionTooltips(transaction.state, handlers, currentView)
     },
 
     provide: f => showTooltip.computeN([f], state => state.field(f))
   })
 
   return [
+    viewCapture,
     aiSelectionMenuField,
     aiSelectionMenuTheme
   ]

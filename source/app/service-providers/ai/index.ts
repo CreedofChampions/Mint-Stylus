@@ -519,6 +519,20 @@ export default class AIProvider extends ProviderContract {
   }
 
   /**
+   * Resolve the GLOBAL thinking (reasoning-effort) level from config
+   * (`ai.thinkingLevel`, set via the top-right dropdown in the main window).
+   * Returns undefined when unset or 'off' so the client adds no reasoning
+   * fields to the request.
+   */
+  private _resolveReasoningEffort (): string | undefined {
+    const configured = this._readConfig<string>('ai.thinkingLevel')
+    if (typeof configured === 'string' && configured.length > 0 && configured !== 'off') {
+      return configured
+    }
+    return undefined
+  }
+
+  /**
    * Compute the extra headers for a provider (OpenRouter attribution headers).
    */
   private _extraHeaders (provider: string): Record<string, string> | undefined {
@@ -666,7 +680,8 @@ export default class AIProvider extends ProviderContract {
       stream: false,
       extraHeaders: this._extraHeaders(provider),
       temperature: payload.temperature,
-      maxTokens: payload.maxTokens
+      maxTokens: payload.maxTokens,
+      reasoningEffort: this._resolveReasoningEffort()
     })
   }
 
@@ -720,6 +735,7 @@ export default class AIProvider extends ProviderContract {
         extraHeaders: this._extraHeaders(provider),
         temperature: payload.temperature,
         maxTokens: payload.maxTokens,
+        reasoningEffort: this._resolveReasoningEffort(),
         onDelta: (delta: string) => { send({ delta }) }
       })
 

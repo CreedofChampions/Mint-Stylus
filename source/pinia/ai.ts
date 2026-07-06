@@ -84,6 +84,24 @@ export interface AIRecoverEntry {
 }
 
 /**
+ * The selection the AI panel's command chooser will act upon. Captured when the
+ * selection bubble's "Command" button is clicked (i.e. before any concrete
+ * command has been chosen), so the panel can offer the preset buttons / the
+ * free-text instruction input and run whichever the user picks against exactly
+ * this text.
+ */
+export interface AIPendingSelection {
+  /**
+   * The selected text the chosen command will be applied to.
+   */
+  text: string
+  /**
+   * Optional whole-document context passed along with the command.
+   */
+  pageContext?: string
+}
+
+/**
  * The structured contents rendered by the AI panel. Which member is populated
  * depends on `panelMode`:
  *  - `summarize`     → `options`
@@ -92,7 +110,8 @@ export interface AIRecoverEntry {
  */
 export interface AIPanelContent {
   /**
-   * The 7 rewrite options for the Summarize flow.
+   * The options for the Summarize flow: 7 shorter rewrites for short input,
+   * or 3 document summaries (TL;DR / comprehensive / outline) for long input.
    */
   options: AISummarizeOption[]
   /**
@@ -111,9 +130,16 @@ function emptyPanelContent (): AIPanelContent {
 
 /**
  * The number of Summarize options we request from, and expect back from, the
- * model per the Mint Stylus spec.
+ * model per the Mint Stylus spec (short-input rewrite mode).
  */
 export const SUMMARIZE_OPTION_COUNT = 7
+
+/**
+ * Selections at or above this many characters are treated as "long" input
+ * (e.g. a whole page): instead of 7 one-line rewrites, Summarize requests a
+ * real document summary (TL;DR / comprehensive / outline — 3 options).
+ */
+export const SUMMARIZE_LONG_INPUT_THRESHOLD = 600
 
 /**
  * The narrow AI bridge that a sibling preload agent exposes on `window.ai`.
@@ -239,6 +265,13 @@ export const useAIStore = defineStore('ai', () => {
    */
   const recoverStack = ref<AIRecoverEntry[]>([])
 
+  /**
+   * The selection the command chooser (panel `command` mode before any command
+   * has run) will act upon. Set by App.vue when the selection bubble's
+   * "Command" button is clicked; null when no selection has been captured.
+   */
+  const pendingSelection = ref<AIPendingSelection|null>(null)
+
   // ---------------------------------------------------------------------------
   // GETTERS
   // ---------------------------------------------------------------------------
@@ -274,8 +307,28 @@ export const useAIStore = defineStore('ai', () => {
   }
 
   /**
-   * Runs the Summarize command on the given selected text, requesting exactly
-   * SUMMARIZE_OPTION_COUNT (7) rewrite options and rendering them in the panel.
+   * Remembers (or clears) the selection the command chooser should act upon.
+   * Called by the editor host (App.vue) when the selection bubble's "Command"
+   * button captures a selection, BEFORE the panel is opened in command mode.
+   *
+   * @param  {AIPendingSelection|null}  selection  The captured selection, or
+   *                                               null to clear it.
+   */
+  function setPendingSelection (selection: AIPendingSelection|null): void {
+    pendingSelection.value = selection
+  }
+
+  /**
+   * Runs the Summarize command on the given selected text. The prompt adapts
+   * to the input length:
+   *
+   *  - SHORT input (< SUMMARIZE_LONG_INPUT_THRESHOLD chars): exactly
+   *    SUMMARIZE_OPTION_COUNT (7) rewrite options, each REQUIRED to be shorter
+   *    than the original.
+   *  - LONG input (a full page): exactly 3 real document summaries — a TL;DR
+   *    paragraph, a comprehensive section-by-section summary, and a bullet
+   *    outline — separated by "===" lines so multi-paragraph options survive
+   *    parsing.
    *
    * @param   {string}  selectedText  The editor selection to summarize.
    *
@@ -285,11 +338,20 @@ export const useAIStore = defineStore('ai', () => {
     openPanel('summarize')
     inFlight.value = true
 
+    const isLongInput = selectedText.length >= SUMMARIZE_LONG_INPUT_THRESHOLD
+
+    const systemPrompt = isLongInput
+      ? [
+        'You are a document summarization assistant. The user will give you a full document. Produce exactly 3 alternative summaries of it, separated by a line containing only "===".',
+        'Option 1: A one-paragraph TL;DR of the whole document (3-5 sentences).',
+        'Option 2: A comprehensive multi-paragraph summary that covers EVERY section and topic of the document, in order. It must summarize the whole document from beginning to end — never just the opening — and should be roughly 15-25% of the length of the original.',
+        'Option 3: A structured bullet outline of the entire document: one bullet per major section, with indented sub-points for the key details of that section.',
+        'Output ONLY the three summaries with a line containing exactly "===" between them. Do not add any commentary, introductions, headings, or labels such as "Here is..." or "Option 1:".'
+      ].join('\n')
+      : `You are a writing assistant. Rewrite the user's text into exactly ${SUMMARIZE_OPTION_COUNT} distinct, concise summaries that preserve the original meaning. Each rewrite MUST be shorter than the original text: use fewer words than the input, preserve its meaning, and add no commentary. Respond with exactly ${SUMMARIZE_OPTION_COUNT} lines, one summary per line, each prefixed with "- ". Do not add any commentary, headings, bold, or quotation marks.`
+
     const messages: AIChatMessage[] = [
-      {
-        role: 'system',
-        content: `You are a writing assistant. Rewrite the user's text into exactly ${SUMMARIZE_OPTION_COUNT} distinct, concise summaries that preserve the original meaning. Respond with exactly ${SUMMARIZE_OPTION_COUNT} lines, one summary per line, each prefixed with "- ". Do not add any commentary, headings, bold, or quotation marks.`
-      },
+      { role: 'system', content: systemPrompt },
       { role: 'user', content: selectedText }
     ]
 
@@ -381,6 +443,50 @@ export const useAIStore = defineStore('ai', () => {
   }
 
   /**
+   * Runs a free-text (user-written) instruction against the given text —
+   * the command chooser's "Or tell the AI what to do with the selection…"
+   * path. The result streams into `panelContent.text` exactly like a preset
+   * command run through `runCommand`.
+   *
+   * @param   {string}  instruction  The user's instruction (what to do).
+   * @param   {string}  text         The text to apply the instruction to.
+   * @param   {string}  pageContext  Optional whole-document context.
+   *
+   * @return  {Promise<void>}
+   */
+  async function runCustomCommand (instruction: string, text: string, pageContext?: string): Promise<void> {
+    openPanel('command')
+    inFlight.value = true
+    panelContent.value = { ...emptyPanelContent(), text: '' }
+
+    const messages: AIChatMessage[] = [
+      {
+        role: 'system',
+        content: 'You are an editing assistant inside a markdown editor. Apply the user\'s instruction to the provided text. Respond in markdown with ONLY the result.'
+      },
+      { role: 'user', content: instruction + '\n\n---\n\n' + text }
+    ]
+
+    try {
+      // As in runCommand: pass the delta sink INTO chatStream so it is
+      // subscribed before the request is dispatched.
+      await window.ai.chatStream({
+        provider: currentProvider.value || undefined,
+        model: currentModel.value || undefined,
+        messages,
+        pageContext
+      }, (delta: string) => {
+        panelContent.value.text += delta
+      })
+    } catch (err: any) {
+      console.error('AI custom command failed', err)
+      panelContent.value.text = `Command failed: ${err?.message ?? String(err)}`
+    } finally {
+      inFlight.value = false
+    }
+  }
+
+  /**
    * Sends a message in the conversation flow. Appends the user's message,
    * streams the assistant's reply into the last message, and keeps the running
    * transcript in `panelContent.messages`.
@@ -437,29 +543,55 @@ export const useAIStore = defineStore('ai', () => {
     panelContent,
     inFlight,
     recoverStack,
+    pendingSelection,
     // Getters
     canRecover,
     // Actions
     openPanel,
     closePanel,
+    setPendingSelection,
     runSummarize,
     pushSummarizeReplacement,
     recoverLast,
     runCommand,
+    runCustomCommand,
     askConversation
   }
 })
 
 /**
- * Parses a model's Summarize reply into individual options. Accepts either
- * "- "/"* " bullet lines or "1." numbered lines, trims surrounding quotes and
- * whitespace, drops blanks, and caps the result at SUMMARIZE_OPTION_COUNT.
+ * A line consisting solely of "===" (surrounding whitespace allowed) — the
+ * separator used by the long-input document summary format.
+ */
+const SUMMARIZE_SEPARATOR_RE = /^[ \t]*===[ \t]*$/m
+
+/**
+ * Parses a model's Summarize reply into individual options. Handles BOTH
+ * Summarize formats:
+ *
+ *  1. "==="-separated blocks (long-input document summaries): if the response
+ *     contains a line that is exactly `===` (whitespace allowed), it is split
+ *     on those lines and each trimmed, non-empty block becomes one option.
+ *     Blocks are kept verbatim otherwise, so multi-paragraph summaries and
+ *     bullet outlines survive intact.
+ *  2. Bullet/numbered lines (short-input rewrites): accepts "- "/"* " bullet
+ *     lines or "1." numbered lines, trims surrounding quotes and whitespace,
+ *     drops blanks, and caps the result at SUMMARIZE_OPTION_COUNT.
  *
  * @param   {string}               response  The raw model text.
  *
  * @return  {AISummarizeOption[]}            The parsed options.
  */
 export function parseSummarizeOptions (response: string): AISummarizeOption[] {
+  if (SUMMARIZE_SEPARATOR_RE.test(response)) {
+    return response
+      .split(/^[ \t]*===[ \t]*$/gm)
+      .map(block => block.trim())
+      .filter(block => block.length > 0)
+      .slice(0, SUMMARIZE_OPTION_COUNT)
+      .map(text => ({ text }))
+  }
+
   return response
     .split('\n')
     .map(line => line.trim())

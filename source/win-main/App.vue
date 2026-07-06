@@ -45,8 +45,25 @@
         <!-- AI-CREATED FOR MINT STYLUS: wrap the editor split so the AI question
              bar can sit above it (top-middle) without stealing the split's height -->
         <div class="editor-with-question-bar">
-        <!-- AI question bar sits top-middle, above the editor/tabs (Mint Stylus) -->
-        <QuestionBar v-on:ask="handleAskQuestion($event)"></QuestionBar>
+        <!-- AI question bar sits top-middle, above the editor/tabs (Mint Stylus);
+             the GLOBAL thinking-level dropdown sits top-right of the same row.
+             Every AI feature picks the level up automatically because the
+             main-process AIProvider reads ai.thinkingLevel per request. -->
+        <div class="question-bar-row">
+          <QuestionBar v-on:ask="handleAskQuestion($event)"></QuestionBar>
+          <label
+            class="ai-thinking-level"
+            v-bind:title="trans('Thinking level: how much reasoning effort the AI spends on every request (all AI features)')"
+          >
+            <span class="ai-thinking-level-label">{{ trans('Thinking:') }}</span>
+            <select v-model="thinkingLevel" v-on:change="setThinkingLevel">
+              <option value="off">{{ trans('Off') }}</option>
+              <option value="low">{{ trans('Low') }}</option>
+              <option value="medium">{{ trans('Medium') }}</option>
+              <option value="high">{{ trans('High') }}</option>
+            </select>
+          </label>
+        </div>
         <!-- Another split view in the right side -->
         <SplitView
           ref="editorSidebarSplitComponent"
@@ -699,6 +716,20 @@ watch(mainSplitViewVisibleComponent, (newValue) => {
 // range's contents change) rather than the live selection, which may have moved.
 const pendingSummarizeSelection = ref<AISelection|null>(null)
 
+// AI-CREATED FOR MINT STYLUS: the GLOBAL thinking-level (reasoning effort)
+// selector shown top-right of the question-bar row. Read once on mount from the
+// config (same synchronous window.config bridge AIProviderControl.vue uses) and
+// written back on change. The main-process AIProvider reads ai.thinkingLevel on
+// EVERY request, so all AI features pick the new level up immediately.
+const thinkingLevel = ref<string>(String(window.config.get('ai.thinkingLevel') ?? 'off'))
+
+/**
+ * Persists the chosen thinking level to the global config.
+ */
+function setThinkingLevel (): void {
+  window.config.set('ai.thinkingLevel', thinkingLevel.value)
+}
+
 const leftComponentBeforeAI = ref<'fileManager'|'globalSearch'>('fileManager')
 watch(() => aiStore.panelOpen, (isOpen) => {
   if (isOpen) {
@@ -1110,9 +1141,13 @@ function handleSummarizeEvent (event: CustomEvent<AISelection>): void {
 /**
  * Handles the `mint-ai-command` DOM CustomEvent dispatched by the AI selection
  * bubble's "Command" button. We remember the range (so a command that produces
- * a replacement could reuse it) and open the panel in command mode. The concrete
- * command preset is chosen from the AI menu; here we simply surface the panel so
- * the user can pick/run a command against the captured selection.
+ * a replacement could reuse it), hand the selection text (+ the whole document
+ * as page context) to the store as its pending selection, and open the panel in
+ * command mode WITHOUT running anything yet: the panel then renders the command
+ * chooser (the five preset buttons + a free-text instruction input) against
+ * exactly this selection. NOTE: This event carries no preset — concrete presets
+ * arrive via the `ai-command` IPC channel from the AI menu and route straight
+ * through runAICommandPreset instead.
  *
  * @param  {CustomEvent<AISelection>}  event  The selection payload.
  */
@@ -1122,6 +1157,11 @@ function handleCommandEvent (event: CustomEvent<AISelection>): void {
     return
   }
   pendingSummarizeSelection.value = { ...selection }
+  const view = activeEditorView()
+  aiStore.setPendingSelection({
+    text: selection.text,
+    pageContext: view !== undefined ? view.state.sliceDoc() : undefined
+  })
   aiStore.openPanel('command')
 }
 
@@ -1149,9 +1189,15 @@ function runAICommandPreset (preset: string): void {
     input = view.state.sliceDoc(sel.from, sel.to)
     // Remember the range so a future "apply" could target it.
     pendingSummarizeSelection.value = { from: sel.from, to: sel.to, text: input }
+    // Also mirror it into the store so the panel can show what the command is
+    // acting on (and so the command chooser targets it after this run).
+    aiStore.setPendingSelection({ text: input, pageContext })
   } else {
     input = pageContext
     pendingSummarizeSelection.value = null
+    // The command acts on the whole page: mirror that into the store so the
+    // panel shows the correct excerpt (and never a stale earlier selection).
+    aiStore.setPendingSelection({ text: input, pageContext })
   }
 
   aiStore.runCommand(preset, input, pageContext).catch(err => console.error(`AI command "${preset}" failed`, err))
@@ -1430,5 +1476,52 @@ function getToolbarButtonDisplay (configName: keyof ConfigOptions['displayToolba
 .editor-with-question-bar .editor-sidebar-split {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+/* AI-CREATED FOR MINT STYLUS: the question bar and the global thinking-level
+   dropdown share one slim top row; the dropdown hugs the right edge. */
+.question-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.question-bar-row .ai-question-bar {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ai-thinking-level {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  opacity: 0.75;
+  cursor: pointer;
+}
+
+.ai-thinking-level:hover {
+  opacity: 1;
+}
+
+.ai-thinking-level .ai-thinking-level-label {
+  white-space: nowrap;
+}
+
+.ai-thinking-level select {
+  height: 20px;
+  font-size: 11px;
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.06);
+  border: none;
+  border-radius: 10px;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+body.dark .ai-thinking-level select {
+  background-color: rgba(255, 255, 255, 0.08);
 }
 </style>
