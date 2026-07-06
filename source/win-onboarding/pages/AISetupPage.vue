@@ -11,15 +11,32 @@
     <select
       id="ai-provider"
       v-model="provider"
+      v-on:change="onProviderChange"
     >
       <option
-        v-for="option in providerOptions"
-        v-bind:key="option.slug"
-        v-bind:value="option.slug"
+        v-for="slug in slugs"
+        v-bind:key="slug"
+        v-bind:value="slug"
       >
-        {{ option.label }}
+        {{ providers[slug].label }}
       </option>
     </select>
+  </p>
+
+  <!-- Base URL: shown ONLY for the Custom (OpenAI-compatible) provider. Every
+       other provider derives its endpoint automatically in the main process. -->
+  <p v-if="isCustom" class="box">
+    <label for="ai-base-url">{{ baseUrlLabel }}</label>
+    <input
+      id="ai-base-url"
+      v-model="baseURL"
+      type="text"
+      autocomplete="off"
+      spellcheck="false"
+      v-bind:placeholder="baseUrlPlaceholder"
+      v-on:blur="saveBaseURL"
+    />
+    <span class="small helper">{{ baseUrlHelper }}</span>
   </p>
 
   <p v-if="selectedNeedsKey" class="box">
@@ -41,55 +58,81 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * @ignore
+ * BEGIN HEADER
+ *
+ * Contains:        AISetupPage
+ * CVM-Role:        View
+ * Maintainer:      Mint Stylus
+ * License:         GNU GPL v3
+ *
+ * Description:     The first-run AI onboarding step. Deliberately simple: the
+ *                  user picks a provider from the shared PROVIDERS catalogue and
+ *                  (optionally) pastes an API key. For the "Custom
+ *                  (OpenAI-compatible)" provider — and ONLY that one — a Base URL
+ *                  input appears; every other provider derives its endpoint
+ *                  automatically in the main process, so no URL is ever shown.
+ *                  The key, if entered, travels inbound ONCE via
+ *                  window.ai.saveKey (encrypted in main) and is never read back.
+ *                  Skipping this page is fine; provider, key and URL can all be
+ *                  changed later in Preferences → AI. window.ai and window.config
+ *                  are provided by the shared preload.
+ *
+ *                  ==== AI-created for Mint Stylus ====
+ *
+ * END HEADER
+ */
+
 import { trans } from 'source/common/i18n-renderer'
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
+import {
+  PROVIDERS,
+  PROVIDER_SLUGS,
+  DEFAULT_PROVIDER,
+  getProviderInfo
+} from '@common/util/ai-providers'
 
-// ==== AI-created for Mint Stylus ====
-// Deliberately simple AI onboarding: the user picks a provider and (optionally)
-// pastes a key. Nothing about base URLs or endpoints is ever shown — the base
-// URL is derived automatically from the provider in the main process. The key,
-// if entered, travels inbound ONCE via window.ai.saveKey (encrypted in main)
-// and is never read back out. Skipping this page is fine; keys can be added
-// later in Preferences → AI.
-//
-// The provider list mirrors the AIProvider main service and the Preferences AI
-// tab (source/win-preferences/schema/ai.ts). No shared util
-// (source/common/util/ai-providers.ts) exists yet, so the 4 options are inlined
-// here; slugs MUST stay in lock-step with the main service and config
-// validation.
-interface AIProviderDescriptor {
-  slug: string
-  label: string
-  needsKey: boolean
-}
-
-const providerOptions: AIProviderDescriptor[] = [
-  { slug: 'openrouter', label: 'OpenRouter', needsKey: true },
-  { slug: 'ollama-cloud', label: 'Ollama Cloud', needsKey: true },
-  { slug: 'zai', label: 'Z.ai (GLM)', needsKey: true },
-  { slug: 'ollama-local', label: 'Ollama (local)', needsKey: false }
-]
+const providers = PROVIDERS
+const slugs = PROVIDER_SLUGS
 
 const pageHeading = trans('AI setup')
 const intro = trans('Choose an AI provider to enable the writing assistant. Just pick a provider and paste your API key — everything else is configured automatically.')
 const providerLabel = trans('AI provider')
+const baseUrlLabel = trans('Base URL')
+const baseUrlPlaceholder = trans('https://your-endpoint.example.com/v1')
+const baseUrlHelper = trans('The OpenAI-compatible endpoint for your custom provider.')
 const keyLabel = trans('API key')
 const keyPlaceholder = trans('Paste your API key')
 const keyHelper = trans('Optional — you can add or change this later in Preferences → AI.')
 const noKeyHelper = trans('This provider runs locally and does not require an API key. You can change your provider later in Preferences → AI.')
 
-const provider = ref(String(window.config.get('ai.provider') ?? 'openrouter'))
+const provider = ref(String(window.config.get('ai.provider') ?? DEFAULT_PROVIDER))
+const baseURL = ref(String(window.config.get('ai.baseURL') ?? ''))
 const apiKey = ref('')
 
-const selectedNeedsKey = computed(() => {
-  const descriptor = providerOptions.find(p => p.slug === provider.value)
-  return descriptor?.needsKey ?? true
-})
+const info = computed(() => getProviderInfo(provider.value))
+const selectedNeedsKey = computed<boolean>(() => info.value.needsKey)
+const isCustom = computed<boolean>(() => provider.value === 'custom')
 
-// Persist the provider choice immediately (base URL is derived from it in main).
-watch(provider, () => {
+/**
+ * Persists the provider choice immediately (base URL is derived from it in main
+ * for every provider except 'custom'). The pasted key box is reset so a key
+ * typed for one provider is never accidentally saved against another.
+ */
+function onProviderChange (): void {
   window.config.set('ai.provider', provider.value)
-})
+  apiKey.value = ''
+}
+
+/**
+ * Persists the custom Base URL. Only meaningful for the 'custom' provider — for
+ * all others the field is hidden and the stored value is ignored in favour of
+ * the provider's fixed endpoint.
+ */
+function saveBaseURL (): void {
+  window.config.set('ai.baseURL', baseURL.value.trim())
+}
 
 /**
  * Saves the entered API key for the currently-selected provider, but only if a

@@ -232,7 +232,7 @@ export interface ConfigOptions {
   // provider (see PROVIDERS in @common/util/ai-providers) — baseURL/model are
   // optional advanced overrides (empty by default), never surfaced in the UI.
   ai: {
-    provider: 'openrouter'|'zai'|'ollama-cloud'|'ollama-local'
+    provider: 'openrouter'|'zai'|'ollama-cloud'|'ollama-local'|'custom'
     baseURL: string
     model: string
     searchProvider: 'tavily'|'brave'|'none'
@@ -315,7 +315,7 @@ export function getConfigTemplate (): ConfigOptions {
     // Mint Stylus AI defaults. The API key is stored securely by the main
     // process (never here, never in the renderer).
     ai: {
-      provider: 'openrouter', // openrouter|zai|ollama-cloud|ollama-local
+      provider: 'openrouter', // openrouter|zai|ollama-cloud|ollama-local|custom
       // The base URL is derived AUTOMATICALLY from the provider (see PROVIDERS
       // in @common/util/ai-providers). Empty by default; a non-empty value is an
       // advanced override that is never surfaced in the UI.

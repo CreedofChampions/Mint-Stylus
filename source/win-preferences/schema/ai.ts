@@ -85,19 +85,12 @@ export function getAIFields (): PreferencesFieldset[] {
     {
       title: trans('AI Provider & Key'),
       group: PreferencesGroups.AI,
-      infoString: trans('Pick your provider and paste its API key — that\'s all you need. The API endpoint and a sensible default model are chosen automatically, so there\'s no URL to configure. Your key is stored encrypted on your computer and is only ever sent to the provider you chose.'),
+      infoString: trans('Everything lives in this one control: pick your provider, paste its API key, and choose a model (pick from the provider\'s list or type your own). For every built-in provider the API endpoint is chosen automatically, so there\'s no URL to configure — only the "Custom (OpenAI-compatible)" provider lets you type a Base URL. Your key is stored encrypted on your computer and is only ever sent to the provider you chose.'),
       help: undefined,
       fields: [
         {
           type: 'custom',
           component: AIProviderControl
-        },
-        {
-          type: 'text',
-          label: trans('Model (optional)'),
-          model: 'ai.model',
-          placeholder: trans('leave blank to use the recommended default'),
-          info: trans('Advanced — leave this blank and Mint Stylus uses the best default for your provider. Only fill it in to pin a specific model (e.g. z-ai/glm-5.2).')
         }
       ]
     },
