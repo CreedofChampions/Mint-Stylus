@@ -20,6 +20,10 @@
     v-bind:inline="true"
     v-on:click="props.field.onClick()"
   ></Button>
+  <component
+    v-else-if="props.field.type === 'custom'"
+    v-bind:is="props.field.component"
+  ></component>
   <TextInput
     v-else-if="props.field.type === 'text'"
     v-bind:model-value="model"
