@@ -436,14 +436,12 @@ export default class AIProvider extends ProviderContract {
    * @return  {Promise<Buffer>}    The encrypted buffer
    */
   private async _encrypt (plaintext: string): Promise<Buffer> {
-    const anyStore = safeStorage as unknown as {
-      encryptStringAsync?: (s: string) => Promise<Buffer>
-      encryptString: (s: string) => Buffer
-    }
-    if (typeof anyStore.encryptStringAsync === 'function') {
-      return await anyStore.encryptStringAsync(plaintext)
-    }
-    return anyStore.encryptString(plaintext)
+    // NOTE: We deliberately use the SYNCHRONOUS safeStorage.encryptString.
+    // Electron 42's encryptStringAsync/decryptStringAsync do NOT round-trip to a
+    // plain string here (decryptStringAsync returns a non-string), which
+    // silently corrupted the API key and caused every request to 401. The sync
+    // methods are stable and cheap for a short key. See _decrypt.
+    return safeStorage.encryptString(plaintext)
   }
 
   /**
@@ -455,14 +453,12 @@ export default class AIProvider extends ProviderContract {
    * @return  {Promise<string>}  The decrypted plaintext
    */
   private async _decrypt (buffer: Buffer): Promise<string> {
-    const anyStore = safeStorage as unknown as {
-      decryptStringAsync?: (b: Buffer) => Promise<string>
-      decryptString: (b: Buffer) => string
-    }
-    if (typeof anyStore.decryptStringAsync === 'function') {
-      return await anyStore.decryptStringAsync(buffer)
-    }
-    return anyStore.decryptString(buffer)
+    // SYNCHRONOUS ONLY — decryptStringAsync returns a non-string in Electron 42,
+    // which corrupts the key and yields 401 Unauthorized on every request. The
+    // sync decryptString reliably returns the original key (and reads blobs that
+    // were written by either variant). Defensive guard: ensure a string.
+    const result = safeStorage.decryptString(buffer)
+    return typeof result === 'string' ? result : String(result)
   }
 
   // ==========================================================================
