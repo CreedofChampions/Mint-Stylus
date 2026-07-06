@@ -19,6 +19,7 @@ import {
   dialog,
   type BrowserWindowConstructorOptions
 } from 'electron'
+import path from 'path'
 import type { WindowPosition } from './types'
 import setWindowChrome from './set-window-chrome'
 import attachLogger from './attach-logger'
@@ -48,6 +49,12 @@ export default function createMainWindow (
     minWidth: 300,
     minHeight: 200,
     show: false,
+    // Set the window icon EXPLICITLY (the Mint Stylus mint-leaf-stylus mark)
+    // rather than relying on the executable's icon, which Windows caches
+    // aggressively — this makes the title-bar (top-left) and taskbar button
+    // show the Mint icon reliably, distinct from a co-installed Zettlr.
+    // assets/icons is populated at build time by the webpack CopyPlugin.
+    icon: path.join(__dirname, 'assets/icons/icon.ico'),
     webPreferences: {
       sandbox: true,
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY
