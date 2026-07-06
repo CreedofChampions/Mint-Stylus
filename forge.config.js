@@ -207,14 +207,11 @@ module.exports = {
     darwinDarkModeSupport: 'true',
     // Electron-forge automatically adds the file extension based on OS
     icon: './resources/icons/icon',
-    // The binary name should always be uppercase Zettlr. As we cannot specify
-    // this on a per-maker basis, we need to output everything this way. With
-    // this property, macOS builds are named Zettlr.app, Windows builds
-    // Zettlr.exe and the linux binaries are called Zettlr (albeit on Linux,
-    // lowercase is preferred). Due to the last issue (Linux binaries being
-    // with capital Z) we have to explicitly set executableName on the Linux
-    // target.
-    name: 'Zettlr',
+    // <!-- edited by AI from here --> The binary name. With this property, macOS
+    // builds are named "Mint Stylus.app", Windows builds "Mint Stylus.exe" and
+    // the linux binaries "Mint Stylus" (on Linux, lowercase is preferred, so the
+    // Linux target sets executableName explicitly).
+    name: 'Mint Stylus',
     // The certificate is written to the default keychain during CI build.
     // See ./scripts/add-osx-cert.sh
     osxSign: {
