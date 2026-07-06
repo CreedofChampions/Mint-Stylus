@@ -114,14 +114,14 @@
  * License:         GNU GPL v3
  *
  * Description:     This component simply offers some explanation to the "bigger"
- *                  projects Zettlr uses under the hood.
+ *                  projects Mint Stylus uses under the hood.
  *
  * END HEADER
  */
 
 import { trans } from '@common/i18n-renderer'
 
-const projectsIntro = trans('Zettlr also makes use of these projects:')
+const projectsIntro = trans('Mint Stylus also makes use of these projects:')
 </script>
 
 <style lang="less">

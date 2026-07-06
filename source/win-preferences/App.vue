@@ -77,6 +77,7 @@ import { getZettelkastenFields } from './schema/zettelkasten'
 import { getSpellcheckingFields } from './schema/spellchecking'
 import { getAutocorrectFields } from './schema/autocorrect'
 import { getAdvancedFields } from './schema/advanced'
+import { getAIFields } from './schema/ai'
 import { ref, computed, watch, onMounted, onBeforeMount } from 'vue'
 import { resolveLangCode } from '@common/util/map-lang-code'
 import SplitView from '@common/vue/window/SplitView.vue'
@@ -135,6 +136,7 @@ const selectedItem = computed(() => query.value === '' ? currentGroup.value : -1
 const fieldsets = computed<Fieldset[]>(() => {
   return [
     ...getAdvancedFields(configStore.config),
+    ...getAIFields(),
     ...getAppearanceFields(configStore.config),
     ...getAutocorrectFields(),
     ...getCitationFields(),
@@ -195,6 +197,11 @@ const groups = computed<Array<SelectableListItem & { id: PreferencesGroups }>>((
       displayText: trans('General'),
       icon: 'cog',
       id: PreferencesGroups.General
+    },
+    {
+      displayText: trans('AI'),
+      icon: 'chip',
+      id: PreferencesGroups.AI
     },
     {
       displayText: trans('Appearance'),

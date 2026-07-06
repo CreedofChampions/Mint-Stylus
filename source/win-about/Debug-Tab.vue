@@ -2,11 +2,11 @@
   <div id="debug-tab">
     <p>
       This page contains internal debug information for this installation of
-      Zettlr.
+      Mint Stylus.
     </p>
     <h2>General Information</h2>
     <ul>
-      <li>Zettlr Version: <strong>{{ configStore.config.version }}</strong></li>
+      <li>Mint Stylus Version: <strong>{{ configStore.config.version }}</strong></li>
       <li>Build number: <strong><code>{{ commit }}</code></strong> ({{ buildDate }})</li>
       <li>UUID: <strong><code>{{ configStore.config.uuid }}</code></strong></li>
       <li>
@@ -76,7 +76,7 @@ const commit = __GIT_COMMIT_HASH__
 const buildDate = DateTime.fromISO(__BUILD_DATE__).toLocaleString({ dateStyle: 'full' })
 // DEBUG: getSystemVersion is a simple property in the renderer, not a function
 const platformVersion = process.getSystemVersion as unknown as string
-// Add version strings for external helper programs Zettlr can use
+// Add version strings for external helper programs Mint Stylus can use
 const programVersions = {
   pandoc: process.env.PANDOC_VERSION ?? 'not available',
   quarto: process.env.QUARTO_VERSION ?? 'not available',

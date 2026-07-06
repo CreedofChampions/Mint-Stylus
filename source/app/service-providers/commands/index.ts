@@ -13,6 +13,7 @@
  * END HEADER
  */
 
+import AICommand from './ai-command'
 import DirDelete from './dir-delete'
 import DirNewProject from './dir-new-project'
 import DirNew from './dir-new'
@@ -35,6 +36,8 @@ import ImportLangFile from './import-lang-file'
 import ImportFiles from './import'
 import IncreasePomodoro from './increase-pomodoro'
 import LanguageTool from './language-tool'
+import OpenAIPreferences from './open-ai-preferences'
+import OpenAIStyle from './open-ai-style'
 import OpenAttachment from './open-attachment'
 import OpenAuxWindow from './open-aux-window'
 import Print from './print'
@@ -55,6 +58,7 @@ import RenameTag from './rename-tag'
 import WorkspaceSort from './ws-sort'
 
 export const commands = [
+  AICommand,
   DirDelete,
   DirNewProject,
   DirNew,
@@ -77,6 +81,8 @@ export const commands = [
   ImportLangFile,
   IncreasePomodoro,
   LanguageTool,
+  OpenAIPreferences,
+  OpenAIStyle,
   OpenAttachment,
   OpenAuxWindow,
   Print,

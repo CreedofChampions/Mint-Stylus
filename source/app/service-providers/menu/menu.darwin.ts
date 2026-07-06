@@ -50,7 +50,7 @@ export default function getMenu (
     // APP MENU
     {
       id: 'app-menu',
-      label: 'Zettlr',
+      label: 'Mint Stylus',
       submenu: [
         {
           id: 'macos-about',
@@ -730,21 +730,18 @@ export default function getMenu (
         {
           type: 'separator'
         },
-        {
-          id: 'menu.donate',
-          label: trans('Support Zettlr ↗︎'),
-          click: function (_menuitem, _focusedWindow) {
-            const target = 'https://patreon.com/zettlr'
-            shell.openExternal(target).catch(e => {
-              logger.error(`[Menu Provider] Cannot open target: ${target}`, e.message)
-            })
-          }
-        },
+        // NOTE (Mint Stylus, AI-created): The upstream "Support Zettlr ↗︎" /
+        // Patreon (patreon.com/zettlr) item has been REMOVED — it solicited
+        // funding for the upstream Zettlr project, which is not appropriate for
+        // this fork. See the risks note in the build report.
         {
           id: 'menu.learn_more',
           label: trans('Visit website ↗︎'),
           click: function (_menuitem, _focusedWindow) {
-            const target = 'https://www.zettlr.com/'
+            // PLACEHOLDER (Mint Stylus, AI-created): no official Mint Stylus site
+            // exists yet. Repoint this once a homepage is live. Until then this
+            // points at the upstream Zettlr project Mint Stylus is a fork of.
+            const target = 'https://www.mintstylus.app/'
             shell.openExternal(target).catch(e => {
               logger.error(`[Menu Provider] Cannot open target: ${target}`, e.message)
             })
@@ -755,7 +752,9 @@ export default function getMenu (
           label: trans('Open user manual ↗︎'),
           accelerator: 'F1',
           click: function (_menuitem, _focusedWindow) {
-            const target = 'https://docs.zettlr.com/'
+            // PLACEHOLDER (Mint Stylus, AI-created): no official Mint Stylus docs
+            // exist yet. Repoint this once documentation is live.
+            const target = 'https://docs.mintstylus.app/'
             shell.openExternal(target).catch(e => {
               logger.error(`[Menu Provider] Cannot open target: ${target}`, e.message)
             })
