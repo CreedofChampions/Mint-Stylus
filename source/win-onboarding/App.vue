@@ -72,6 +72,11 @@
           <OtherFilesPage></OtherFilesPage>
         </div>
       </div>
+      <div v-else-if="currentPage === 'ai-setup'" class="page">
+        <div class="page-wrapper">
+          <AISetupPage></AISetupPage>
+        </div>
+      </div>
       <div v-else-if="currentPage === 'finish'" class="page">
         <div class="page-wrapper">
           <FinishPage></FinishPage>
@@ -141,6 +146,7 @@ import WritingMarkdownPage from './pages/WritingMarkdownPage.vue'
 import CitingPage from './pages/CitingPage.vue'
 import WritingCheckPage from './pages/WritingCheckPage.vue'
 import OtherFilesPage from './pages/OtherFilesPage.vue'
+import AISetupPage from './pages/AISetupPage.vue'
 import PACKAGE_JSON from '../../package.json'
 import { trans } from 'source/common/i18n-renderer'
 import SupportLogos from './SupportLogos.vue'
@@ -173,12 +179,13 @@ const pages = [
   'citations',
   'writing-check',
   'other-files',
+  'ai-setup',
   'finish'
 ] as const
 
 // Update labels
 const updateCompleteHeading = trans('Update complete!')
-const updateCompleteMessage = trans('Zettlr has been updated. You are now running Zettlr')
+const updateCompleteMessage = trans('Mint Stylus has been updated. You are now running Mint Stylus')
 const getStartedLabel = trans('Get started')
 const whatsChangedLabel = trans('See what\'s changed')
 const buildDate = DateTime.fromISO(__BUILD_DATE__).toLocaleString({ dateStyle: 'full' })

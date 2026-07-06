@@ -39,7 +39,7 @@ const dictIntro = trans('Here you can configure how you wish to check for spelli
 const dictLabel = computed(() => {
   return trans('Set %s as a spellchecking dictionary', dictionaryCandidateLanguage.value)
 })
-const ltIntro = trans('Zettlr integrates with LanguageTool, a free grammar and spellchecker. You can turn it on with simple defaults.')
+const ltIntro = trans('Mint Stylus integrates with LanguageTool, a free grammar and spellchecker. You can turn it on with simple defaults.')
 const ltLabel = trans('Activate LanguageTool (uses online service)')
 const ltOutro = trans('You can choose a custom server and provide your LanguageTool username later in the settings.')
 

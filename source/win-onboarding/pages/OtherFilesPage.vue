@@ -16,9 +16,9 @@
 import { trans } from 'source/common/i18n-renderer'
 import { ref } from 'vue'
 
-const pageHeading = trans('Images and PDFs in Zettlr')
-const previewInfo = trans('Zettlr can preview images and PDF files directly in Zettlr. This allows you to reference plots or literature directly while writing. If you do not activate this, images and PDF files will only be shown in the sidebar and open with your computer\'s default viewer.')
-const activateLabel = trans('Activate Image and PDF Previews in Zettlr')
+const pageHeading = trans('Images and PDFs in Mint Stylus')
+const previewInfo = trans('Mint Stylus can preview images and PDF files directly in Mint Stylus. This allows you to reference plots or literature directly while writing. If you do not activate this, images and PDF files will only be shown in the sidebar and open with your computer\'s default viewer.')
+const activateLabel = trans('Activate Image and PDF Previews in Mint Stylus')
 
 const hasActivatedPreviws = ref(false)
 function activatePreviews () {

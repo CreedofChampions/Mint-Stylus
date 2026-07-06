@@ -228,7 +228,9 @@ export interface ConfigOptions {
   }
   // Mint Stylus AI configuration (added for the AI-native fork). All HTTP calls
   // and API keys live exclusively in the main-process AIProvider; the renderer
-  // never sees a key.
+  // never sees a key. The base URL and model are derived AUTOMATICALLY from the
+  // provider (see PROVIDERS in @common/util/ai-providers) — baseURL/model are
+  // optional advanced overrides (empty by default), never surfaced in the UI.
   ai: {
     provider: 'openrouter'|'zai'|'ollama-cloud'|'ollama-local'
     baseURL: string
@@ -314,8 +316,12 @@ export function getConfigTemplate (): ConfigOptions {
     // process (never here, never in the renderer).
     ai: {
       provider: 'openrouter', // openrouter|zai|ollama-cloud|ollama-local
-      baseURL: 'https://openrouter.ai/api/v1',
-      model: 'z-ai/glm-5.2',
+      // The base URL is derived AUTOMATICALLY from the provider (see PROVIDERS
+      // in @common/util/ai-providers). Empty by default; a non-empty value is an
+      // advanced override that is never surfaced in the UI.
+      baseURL: '',
+      // Empty means "use the provider's default model" (see PROVIDERS).
+      model: '',
       searchProvider: 'tavily', // tavily|brave|none
       styleFilePath: '' // Optional path to a user-provided style guide file
     },
