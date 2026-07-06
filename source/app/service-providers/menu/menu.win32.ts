@@ -753,7 +753,7 @@ export default function getMenu (
             dialog.showMessageBox({
               title: trans('Clear FSAL Cache'),
               message: trans('Clearing the FSAL cache requires a restart.'),
-              detail: trans('After the restart, Zettlr will recreate the entire cache, which may take a few moments, depending on the amount of files you have loaded and the speed of your disk. The window(s) will show afterward.'),
+              detail: trans('After the restart, Mint Stylus will recreate the entire cache, which may take a few moments, depending on the amount of files you have loaded and the speed of your disk. The window(s) will show afterward.'),
               type: 'question',
               buttons: [
                 trans('Restart now'),

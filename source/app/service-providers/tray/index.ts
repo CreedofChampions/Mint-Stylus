@@ -163,7 +163,7 @@ export default class TrayProvider extends ProviderContract {
 
     const menu: MenuItemConstructorOptions[] = [
       {
-        label: trans('Show Zettlr'),
+        label: trans('Show Mint Stylus'),
         click: () => this._windows.activateFromTray(),
         type: 'normal'
       },
@@ -176,7 +176,7 @@ export default class TrayProvider extends ProviderContract {
     ]
 
     const contextMenu = Menu.buildFromTemplate(menu)
-    this._tray.setToolTip(trans('Zettlr'))
+    this._tray.setToolTip(trans('Mint Stylus'))
     this._tray.setContextMenu(contextMenu)
   }
 

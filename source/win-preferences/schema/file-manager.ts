@@ -54,7 +54,7 @@ export function getFileManagerFields (config: ConfigOptions): PreferencesFieldse
     },
     {
       title: trans('Markdown document name display'),
-      infoString: trans('Determines how Zettlr will display files in various places such as the file manager.'),
+      infoString: trans('Determines how Mint Stylus will display files in various places such as the file manager.'),
       group: PreferencesGroups.FileManager,
       help: undefined, // TODO
       fields: [
@@ -80,7 +80,7 @@ export function getFileManagerFields (config: ConfigOptions): PreferencesFieldse
     },
     {
       title: trans('Time display and sorting'),
-      infoString: trans('Determine which timestamp Zettlr shows for files. This also affects sorting by time.'),
+      infoString: trans('Determine which timestamp Mint Stylus shows for files. This also affects sorting by time.'),
       group: PreferencesGroups.FileManager,
       help: undefined, // TODO
       fields: [
@@ -96,7 +96,7 @@ export function getFileManagerFields (config: ConfigOptions): PreferencesFieldse
     },
     {
       title: trans('Filename sorting'),
-      infoString: trans('Determines how Zettlr sorts files and folders when sorting by name.'),
+      infoString: trans('Determines how Mint Stylus sorts files and folders when sorting by name.'),
       group: PreferencesGroups.FileManager,
       help: undefined, // TODO
       fields: [
@@ -113,7 +113,7 @@ export function getFileManagerFields (config: ConfigOptions): PreferencesFieldse
     },
     {
       title: trans('Workspace sorting'),
-      infoString: trans('Zettlr automatically sorts your workspaces by name.'),
+      infoString: trans('Mint Stylus automatically sorts your workspaces by name.'),
       group: PreferencesGroups.FileManager,
       help: undefined, // TODO
       fields: [

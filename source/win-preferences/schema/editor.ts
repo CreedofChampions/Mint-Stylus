@@ -144,7 +144,7 @@ export function getEditorFields (config: ConfigOptions): PreferencesFieldset[] {
     },
     {
       title: trans('Default Formatting Characters'),
-      infoString: trans('Select the characters Zettlr should use when marking text as bold or italic.'),
+      infoString: trans('Select the characters Mint Stylus should use when marking text as bold or italic.'),
       group: PreferencesGroups.Editor,
       fields: [
         {
@@ -327,7 +327,7 @@ export function getEditorFields (config: ConfigOptions): PreferencesFieldset[] {
         {
           type: 'checkbox',
           label: trans('Always indent the current line when pressing Tab'),
-          info: trans('Zettlr always indents the line for list items. Turn this setting on to always indent any line.'),
+          info: trans('Mint Stylus always indents the line for list items. Turn this setting on to always indent any line.'),
           model: 'editor.alwaysIndentLineOnTab'
         }
       ]

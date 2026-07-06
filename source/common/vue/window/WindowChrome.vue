@@ -12,7 +12,7 @@
       <WindowTitlebar
         v-if="showTitlebar"
         v-bind:has-vibrancy="!props.disableVibrancy"
-        v-bind:title-content="props.title ?? 'Zettlr'"
+        v-bind:title-content="props.title ?? 'Mint Stylus'"
         v-on:dblclick="handleDoubleClick('titlebar')"
       ></WindowTitlebar>
       <WindowMenubar
@@ -165,7 +165,7 @@ watch(platform, () => {
 })
 
 watch(toRef(props, 'title'), () => {
-  document.title = props.title ?? 'Zettlr'
+  document.title = props.title ?? 'Mint Stylus'
 })
 
 watch(isFullscreen, () => {
@@ -181,7 +181,7 @@ onBeforeMount(() => {
 
   // Apply the body class immediately and also set the title
   document.body.classList.add(platform.value)
-  document.title = props.title ?? 'Zettlr'
+  document.title = props.title ?? 'Mint Stylus'
 })
 
 function handleDoubleClick (origin: 'titlebar'|'toolbar'): void {

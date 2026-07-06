@@ -62,7 +62,7 @@ export function getImportExportFields (): PreferencesFieldset[] {
       fields: [
         {
           type: 'checkbox', // TODO: Must be radio; second option "Use system-wide Pandoc for exports"
-          label: trans('Use Zettlr\'s internal Pandoc for exports'),
+          label: trans('Use Mint Stylus\'s internal Pandoc for exports'),
           model: 'export.useBundledPandoc'
         },
         {
@@ -73,7 +73,7 @@ export function getImportExportFields (): PreferencesFieldset[] {
         {
           type: 'checkbox',
           label: trans('Enforce highlight extension on export'),
-          info: trans('When enabled, Zettlr will automatically enable the "mark"-extension when exporting Markdown files.'),
+          info: trans('When enabled, Mint Stylus will automatically enable the "mark"-extension when exporting Markdown files.'),
           model: 'export.enforceMarkSupport'
         },
         { type: 'separator' },

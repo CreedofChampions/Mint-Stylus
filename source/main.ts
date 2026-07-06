@@ -46,7 +46,7 @@ if (!app.requestSingleInstanceLock()) {
 // To show notifications properly on Windows, we must manually set the appUserModelID
 // See https://www.electronjs.org/docs/tutorial/notifications#windows
 if (process.platform === 'win32') {
-  app.setAppUserModelId('com.zettlr.app')
+  app.setAppUserModelId('app.mintstylus')
 }
 
 // Setting custom data dir for user configuration files.
@@ -106,13 +106,13 @@ app.whenReady().then(() => {
   // Makes only sense for macOS, as we don't call the showAboutPanel() method
   // programmatically, but either way, it's a little bit nicer.
   app.setAboutPanelOptions({
-    applicationName: 'Zettlr',
+    applicationName: 'Mint Stylus',
     applicationVersion: app.getVersion(),
-    copyright: `Copyright (c) 2017 - ${(new Date()).getFullYear()} by Hendrik Erz. Licensed via GNU GPL 3.0`,
+    copyright: `Mint Stylus — based on Zettlr (Copyright (c) 2017 - ${(new Date()).getFullYear()} by Hendrik Erz). Licensed via GNU GPL 3.0`,
     // version: If we ever introduce a build number. This defaults to the Electron version.
-    credits: 'We would like to thank all contributors to the app, its translators, and those who meticulously update the documentation.',
+    credits: 'Mint Stylus is a fork of Zettlr. We would like to thank all contributors to the upstream app, its translators, and those who meticulously update the documentation.',
     authors: ['Hendrik Erz'], // TODO: Somehow generate the contributors list.
-    website: 'https://www.zettlr.com/',
+    website: 'https://www.mintstylus.app/',
     iconPath: process.execPath
   })
   // Immediately boot the application. This function performs some initial

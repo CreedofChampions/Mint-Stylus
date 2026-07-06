@@ -83,7 +83,7 @@ export default async function makeImport (
       if (potentialProfiles.length === 0) {
         failedFiles.push(file.path)
         if (errorCallback !== null) {
-          errorCallback(file.path, trans('Zettlr can import this file, but it requires an import profile. Please create one first.'))
+          errorCallback(file.path, trans('Mint Stylus can import this file, but it requires an import profile. Please create one first.'))
         }
         continue
       }

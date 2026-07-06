@@ -31,7 +31,7 @@ export default function promptDialog (logger: LogProvider, win: BrowserWindow|nu
     type: options.type ?? 'info',
     buttons: [trans('Ok')],
     defaultId: 0,
-    title: options.title ?? 'Zettlr',
+    title: options.title ?? 'Mint Stylus',
     message: options.message
   }
 
