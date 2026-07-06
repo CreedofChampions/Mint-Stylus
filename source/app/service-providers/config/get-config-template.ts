@@ -226,6 +226,16 @@ export interface ConfigOptions {
     currentSidebarTab: 'toc'|'references'|'relatedFiles'|'attachments'
     recentGlobalSearches: string[]
   }
+  // Mint Stylus AI configuration (added for the AI-native fork). All HTTP calls
+  // and API keys live exclusively in the main-process AIProvider; the renderer
+  // never sees a key.
+  ai: {
+    provider: 'openrouter'|'zai'|'ollama-cloud'|'ollama-local'
+    baseURL: string
+    model: string
+    searchProvider: 'tavily'|'brave'|'none'
+    styleFilePath: string
+  }
   ui: {
     fileManagerSplitSize: [number, number]
     editorSidebarSplitSize: [number, number]
@@ -290,7 +300,8 @@ export function getConfigTemplate (): ConfigOptions {
       nativeAppearance: process.platform === 'darwin', // Linux only
       vibrancy: false,
       // Store a few GUI related settings here as well
-      fileManagerVisible: true,
+      // Mint Stylus: file manager is closed by default.
+      fileManagerVisible: false,
       sidebarVisible: false,
       currentSidebarTab: 'toc',
       recentGlobalSearches: []
@@ -298,6 +309,15 @@ export function getConfigTemplate (): ConfigOptions {
     ui: {
       fileManagerSplitSize: [ 20, 80 ],
       editorSidebarSplitSize: [ 80, 20 ]
+    },
+    // Mint Stylus AI defaults. The API key is stored securely by the main
+    // process (never here, never in the renderer).
+    ai: {
+      provider: 'openrouter', // openrouter|zai|ollama-cloud|ollama-local
+      baseURL: 'https://openrouter.ai/api/v1',
+      model: 'z-ai/glm-5.2',
+      searchProvider: 'tavily', // tavily|brave|none
+      styleFilePath: '' // Optional path to a user-provided style guide file
     },
     // Visible attachment filetypes
     attachmentExtensions: [],

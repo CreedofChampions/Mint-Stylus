@@ -33,11 +33,22 @@
           v-on:jtl="(filePath, lineNumber, newTab) => jtl(filePath, lineNumber, newTab)"
         >
         </GlobalSearch>
+        <!-- ... or the AI panel, if an AI action opened it (Mint Stylus) -->
+        <!-- AI-CREATED FOR MINT STYLUS -->
+        <AIPanel
+          v-show="mainSplitViewVisibleComponent === 'aiPanel'"
+        ></AIPanel>
       </template>
       <template #view2>
+        <!-- AI-CREATED FOR MINT STYLUS: wrap the editor split so the AI question
+             bar can sit above it (top-middle) without stealing the split's height -->
+        <div class="editor-with-question-bar">
+        <!-- AI question bar sits top-middle, above the editor/tabs (Mint Stylus) -->
+        <QuestionBar v-on:ask="handleAskQuestion($event)"></QuestionBar>
         <!-- Another split view in the right side -->
         <SplitView
           ref="editorSidebarSplitComponent"
+          class="editor-sidebar-split"
           v-bind:initial-size-percent="editorSidebarSplitComponentInitialSize"
           v-bind:minimum-size-percent="[ 50, 10 ]"
           v-bind:reset-size-percent="[ 80, 20 ]"
@@ -71,6 +82,7 @@
             ></MainSidebar>
           </template>
         </SplitView>
+        </div>
       </template>
     </SplitView>
   </WindowChrome>
@@ -158,6 +170,11 @@ import PopoverPomodoro from './PopoverPomodoro.vue'
 import PopoverTable from './PopoverTable.vue'
 import PopoverDocInfo from './PopoverDocInfo.vue'
 import PopoverPandoc from './PopoverPandoc.vue'
+// AI-CREATED FOR MINT STYLUS: AI panel + question bar + AI store
+import AIPanel from './ai-panel/AIPanel.vue'
+import QuestionBar from './ai-panel/QuestionBar.vue'
+import { useAIStore } from '../pinia/ai'
+import { fiveWordSlugPrompt } from 'source/app/service-providers/ai/prompts'
 import { trans } from '@common/i18n-renderer'
 import localiseNumber from '@common/util/localise-number'
 import generateId from '@common/util/generate-id'
@@ -192,6 +209,9 @@ const configStore = useConfigStore()
 const documentTreeStore = useDocumentTreeStore()
 const windowStateStore = useWindowStateStore()
 const LRTStore = useLRTStore()
+// AI-CREATED FOR MINT STYLUS: the renderer-side AI state store. It never holds a
+// key; it only sends {command, payload} over the window.ai preload bridge.
+const aiStore = useAIStore()
 
 const SOUND_EFFECTS = [
   {
@@ -214,7 +234,9 @@ const searchParams = new URLSearchParams(window.location.search)
 const windowId = searchParams.get('window_id')!
 
 const fileManagerVisible = computed<boolean>(() => configStore.config.window.fileManagerVisible)
-const mainSplitViewVisibleComponent = ref<'fileManager'|'globalSearch'>('fileManager')
+// AI-CREATED FOR MINT STYLUS: 'aiPanel' added so the AI panel can share the
+// left #view1 slot with the file manager and global search.
+const mainSplitViewVisibleComponent = ref<'fileManager'|'globalSearch'|'aiPanel'>('fileManager')
 const isUpdateAvailable = ref(false)
 const hasVibrancy = computed(() => configStore.config.window.vibrancy && process.platform === 'darwin')
 
@@ -659,6 +681,25 @@ watch(mainSplitViewVisibleComponent, (newValue) => {
   }
 })
 
+// AI-CREATED FOR MINT STYLUS: when any AI surface opens the panel (Summarize
+// bubble, an AI command, the QQ flow, or the question bar), slide the AI panel
+// into the left #view1 slot. We reveal the left pane (fileManagerVisible drives
+// its visibility) so the panel is actually shown, and remember what was there
+// before so closing the panel restores the previous left-pane component.
+const leftComponentBeforeAI = ref<'fileManager'|'globalSearch'>('fileManager')
+watch(() => aiStore.panelOpen, (isOpen) => {
+  if (isOpen) {
+    if (mainSplitViewVisibleComponent.value !== 'aiPanel') {
+      leftComponentBeforeAI.value = mainSplitViewVisibleComponent.value
+    }
+    configStore.setConfigValue('window.fileManagerVisible', true)
+    mainSplitViewVisibleComponent.value = 'aiPanel'
+  } else if (mainSplitViewVisibleComponent.value === 'aiPanel') {
+    // Restore whatever occupied the left pane before the AI panel opened.
+    mainSplitViewVisibleComponent.value = leftComponentBeforeAI.value
+  }
+})
+
 watch(distractionFree, (newValue) => {
   if (newValue) {
     // Enter distraction free mode
@@ -879,6 +920,98 @@ function startGlobalSearch (terms: string): void {
     .catch(err => console.error(err))
 }
 
+// AI-CREATED FOR MINT STYLUS ---------------------------------------------------
+//
+// The top hover question bar emits `ask` with a trimmed question. We turn that
+// into a brand-new conversation document, auto-named from a <=5-word slug the
+// AIProvider generates, saved BESIDE the most-recently-active file, seeded with
+// the question, and then we open the AI panel in conversation mode and kick off
+// the exchange. All AI/HTTP work happens in main via the window.ai bridge; the
+// renderer never touches a key.
+
+/**
+ * Returns the directory portion of an absolute path, coping with both POSIX and
+ * Windows separators. We avoid importing node's `path` into the renderer (this
+ * SFC never does) and only need a dirname here.
+ *
+ * @param   {string}  absPath  An absolute file path.
+ * @return  {string}           The containing directory, or '' if none found.
+ */
+function dirnameOf (absPath: string): string {
+  const idx = Math.max(absPath.lastIndexOf('/'), absPath.lastIndexOf('\\'))
+  return idx > 0 ? absPath.slice(0, idx) : ''
+}
+
+async function handleAskQuestion (question: string): Promise<void> {
+  const trimmed = question.trim()
+  if (trimmed === '') {
+    return
+  }
+
+  // 1) Ask the AIProvider (in main) for a <=5-word kebab-case filename slug.
+  //    fiveWordSlugPrompt is a pure prompt builder; the actual model call
+  //    happens in main behind window.ai.chat.
+  let slug = 'new-conversation'
+  try {
+    const raw = await window.ai.chat({ messages: fiveWordSlugPrompt(trimmed) })
+    // Normalise: first non-empty line, lower-kebab, strip anything unsafe.
+    const candidate = raw
+      .split('\n')
+      .map(l => l.trim())
+      .find(l => l.length > 0) ?? ''
+    const cleaned = candidate
+      .toLowerCase()
+      .replace(/[^a-z0-9\- ]+/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+    if (cleaned.length > 0) {
+      slug = cleaned
+    }
+  } catch (err) {
+    // A failed slug must not block the flow — fall back to the default name.
+    console.error('Could not generate a filename slug for the new conversation', err)
+  }
+
+  // 2) Resolve the directory of the most-recently-active file so the new doc is
+  //    saved BESIDE it. If nothing is open, file-new falls back to the current
+  //    workspace / documents directory on its own (path left undefined).
+  const lastPath = documentTreeStore.lastLeafActiveFile?.path
+  const dir = lastPath !== undefined ? dirnameOf(lastPath) : ''
+
+  // 3) Create + open the new markdown document via the existing file-new command
+  //    bridge (same path handleClick uses). Providing `name` skips the save
+  //    dialog; providing `path` saves it beside the last file.
+  try {
+    await ipcRenderer.invoke('application', {
+      command: 'file-new',
+      payload: {
+        type: DocumentType.Markdown,
+        name: `${slug}.md`,
+        windowId,
+        leafId: lastLeafId.value,
+        ...(dir !== '' ? { path: dir } : {})
+      }
+    })
+  } catch (err) {
+    console.error('Could not create the new conversation document', err)
+    return
+  }
+
+  // 4) Seed the freshly-opened (now active) document with the question, using
+  //    the existing prop-as-event editor bridge. replaceSelection inserts the
+  //    data at the cursor of the active editor (the new empty doc).
+  editorCommands.value.data = `# ${trimmed}\n\n`
+  editorCommands.value.replaceSelection = !editorCommands.value.replaceSelection
+
+  // 5) Open the AI panel in conversation mode and start the exchange. openPanel
+  //    (via askConversation) flips panelOpen, which our watcher turns into the
+  //    left-pane AI panel becoming visible.
+  aiStore.openPanel('conversation')
+  await aiStore.askConversation(trimmed)
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function toggleFileList (): void {
   // This event can be used by various components to ask the file manager to
@@ -1063,4 +1196,17 @@ function getToolbarButtonDisplay (configName: keyof ConfigOptions['displayToolba
 </script>
 
 <style lang="css" scoped>
+/* AI-CREATED FOR MINT STYLUS: keep the question bar auto-height and let the
+   editor/sidebar split fill the remaining height of the right pane. */
+.editor-with-question-bar {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.editor-with-question-bar .editor-sidebar-split {
+  flex: 1 1 auto;
+  min-height: 0;
+}
 </style>

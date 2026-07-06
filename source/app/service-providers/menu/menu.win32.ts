@@ -317,6 +317,86 @@ export default function getMenu (
         }
       ]
     },
+    // AI MENU
+    // NOTE (Mint Stylus, AI-created): This top-level AI menu is inserted at
+    // array index 1 (immediately after the File menu). Because of this
+    // insertion, the debug-menu index used by the trailing menu.splice() below
+    // shifts by one (3 -> 4). See the splice call near the end of this file.
+    {
+      id: 'ai-menu',
+      label: trans('AI'),
+      submenu: [
+        {
+          id: 'menu.ai_keys_model',
+          label: trans('API keys & model…'),
+          click: function (_menuitem, _focusedWindow) {
+            // Opens the Preferences window on the AI tab. The 'open-ai-preferences'
+            // command handler is added in a later Mint Stylus phase.
+            commands.run('open-ai-preferences', undefined)
+              .catch(e => logger.error(String(e.message), e))
+          }
+        },
+        {
+          id: 'menu.ai_edit_style',
+          label: trans('Edit "Write in My Style" file…'),
+          click: function (_menuitem, _focusedWindow) {
+            // Opens the user's Write-in-My-Style precursor file. The
+            // 'open-ai-style' command handler is added in a later Mint Stylus phase.
+            commands.run('open-ai-style', undefined)
+              .catch(e => logger.error(String(e.message), e))
+          }
+        },
+        {
+          type: 'separator'
+        },
+        {
+          id: 'menu.ai_commands',
+          label: trans('Commands'),
+          submenu: [
+            {
+              id: 'menu.ai_command.SHORTEN',
+              label: trans('Shorten Text'),
+              click: function (_menuitem, _focusedWindow) {
+                commands.run('ai-command', { command: 'SHORTEN' })
+                  .catch(e => logger.error(String(e.message), e))
+              }
+            },
+            {
+              id: 'menu.ai_command.SUMMARIZE',
+              label: trans('Summarize'),
+              click: function (_menuitem, _focusedWindow) {
+                commands.run('ai-command', { command: 'SUMMARIZE' })
+                  .catch(e => logger.error(String(e.message), e))
+              }
+            },
+            {
+              id: 'menu.ai_command.SYNONYMS',
+              label: trans('Synonyms'),
+              click: function (_menuitem, _focusedWindow) {
+                commands.run('ai-command', { command: 'SYNONYMS' })
+                  .catch(e => logger.error(String(e.message), e))
+              }
+            },
+            {
+              id: 'menu.ai_command.ALTERNATIVES',
+              label: trans('Alternatives'),
+              click: function (_menuitem, _focusedWindow) {
+                commands.run('ai-command', { command: 'ALTERNATIVES' })
+                  .catch(e => logger.error(String(e.message), e))
+              }
+            },
+            {
+              id: 'menu.ai_command.CHALLENGE_IDEA',
+              label: trans('Challenge Idea'),
+              click: function (_menuitem, _focusedWindow) {
+                commands.run('ai-command', { command: 'CHALLENGE_IDEA' })
+                  .catch(e => logger.error(String(e.message), e))
+              }
+            }
+          ]
+        }
+      ]
+    },
     // EDIT MENU
     {
       id: 'edit-menu',
@@ -616,7 +696,7 @@ export default function getMenu (
       submenu: [
         {
           id: 'menu.about',
-          label: trans('About Zettlr'),
+          label: trans('About Mint Stylus'),
           click: function (_menuitem, _focusedWindow) {
             windows.showAboutWindow()
           }
@@ -625,21 +705,17 @@ export default function getMenu (
         {
           type: 'separator'
         },
-        {
-          id: 'menu.donate',
-          label: trans('Support Zettlr ↗︎'),
-          click: function (_menuitem, _focusedWindow) {
-            const target = 'https://patreon.com/zettlr'
-            shell.openExternal(target).catch(e => {
-              logger.error(`[Menu Provider] Cannot open target: ${target}`, e.message)
-            })
-          }
-        },
+        // NOTE (Mint Stylus, AI-created): The upstream "Support Zettlr ↗︎" /
+        // Patreon (patreon.com/zettlr) item has been REMOVED — it solicited
+        // funding for the upstream Zettlr project, which is not appropriate for
+        // this fork. See the risks note in the build report.
         {
           id: 'menu.learn_more',
           label: trans('Visit website ↗︎'),
           click: function (_menuitem, _focusedWindow) {
-            const target = 'https://www.zettlr.com/'
+            // PLACEHOLDER (Mint Stylus, AI-created): no official Mint Stylus site
+            // exists yet. Repoint this once a homepage is live.
+            const target = 'https://www.mintstylus.app/'
             shell.openExternal(target).catch(e => {
               logger.error(`[Menu Provider] Cannot open target: ${target}`, e.message)
             })
@@ -650,7 +726,9 @@ export default function getMenu (
           label: trans('Open user manual ↗︎'),
           accelerator: 'F1',
           click: function (_menuitem, _focusedWindow) {
-            const target = 'https://docs.zettlr.com/'
+            // PLACEHOLDER (Mint Stylus, AI-created): no official Mint Stylus docs
+            // exist yet. Repoint this once documentation is live.
+            const target = 'https://docs.mintstylus.app/'
             shell.openExternal(target).catch(e => {
               logger.error(`[Menu Provider] Cannot open target: ${target}`, e.message)
             })
@@ -701,7 +779,9 @@ export default function getMenu (
 
   // Finally, before returning, make sure to remove the debug menu if applicable
   if (config.get('debug') === false) {
-    menu.splice(3, 1)
+    // NOTE (Mint Stylus, AI-created): index shifted 3 -> 4 because the AI menu
+    // was inserted at array index 1, pushing the debug-menu down by one slot.
+    menu.splice(4, 1)
   }
 
   return menu

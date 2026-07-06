@@ -54,7 +54,7 @@ export default function getMenu (
       submenu: [
         {
           id: 'macos-about',
-          label: trans('About Zettlr'),
+          label: trans('About Mint Stylus'),
           role: 'about'
         },
         {
@@ -310,6 +310,87 @@ export default function getMenu (
           click: function (_menuitem, focusedWindow) {
             (focusedWindow as BrowserWindow|undefined)?.webContents.send('shortcut', 'delete-file')
           }
+        }
+      ]
+    },
+    // AI MENU
+    // NOTE (Mint Stylus, AI-created): This top-level AI menu is inserted between
+    // the File and Edit menus (array index 2, since the macOS app menu occupies
+    // index 0 and File index 1). Because of this insertion, the debug-menu index
+    // used by the trailing menu.splice() below shifts by one (4 -> 5). See the
+    // splice call near the end of this file.
+    {
+      id: 'ai-menu',
+      label: trans('AI'),
+      submenu: [
+        {
+          id: 'menu.ai_keys_model',
+          label: trans('API keys & model…'),
+          click: function (_menuitem, _focusedWindow) {
+            // Opens the Preferences window on the AI tab. The 'open-ai-preferences'
+            // command handler is added in a later Mint Stylus phase.
+            commands.run('open-ai-preferences', undefined)
+              .catch(e => logger.error(String(e.message), e))
+          }
+        },
+        {
+          id: 'menu.ai_edit_style',
+          label: trans('Edit "Write in My Style" file…'),
+          click: function (_menuitem, _focusedWindow) {
+            // Opens the user's Write-in-My-Style precursor file. The
+            // 'open-ai-style' command handler is added in a later Mint Stylus phase.
+            commands.run('open-ai-style', undefined)
+              .catch(e => logger.error(String(e.message), e))
+          }
+        },
+        {
+          type: 'separator'
+        },
+        {
+          id: 'menu.ai_commands',
+          label: trans('Commands'),
+          submenu: [
+            {
+              id: 'menu.ai_command.SHORTEN',
+              label: trans('Shorten Text'),
+              click: function (_menuitem, _focusedWindow) {
+                commands.run('ai-command', { command: 'SHORTEN' })
+                  .catch(e => logger.error(String(e.message), e))
+              }
+            },
+            {
+              id: 'menu.ai_command.SUMMARIZE',
+              label: trans('Summarize'),
+              click: function (_menuitem, _focusedWindow) {
+                commands.run('ai-command', { command: 'SUMMARIZE' })
+                  .catch(e => logger.error(String(e.message), e))
+              }
+            },
+            {
+              id: 'menu.ai_command.SYNONYMS',
+              label: trans('Synonyms'),
+              click: function (_menuitem, _focusedWindow) {
+                commands.run('ai-command', { command: 'SYNONYMS' })
+                  .catch(e => logger.error(String(e.message), e))
+              }
+            },
+            {
+              id: 'menu.ai_command.ALTERNATIVES',
+              label: trans('Alternatives'),
+              click: function (_menuitem, _focusedWindow) {
+                commands.run('ai-command', { command: 'ALTERNATIVES' })
+                  .catch(e => logger.error(String(e.message), e))
+              }
+            },
+            {
+              id: 'menu.ai_command.CHALLENGE_IDEA',
+              label: trans('Challenge Idea'),
+              click: function (_menuitem, _focusedWindow) {
+                commands.run('ai-command', { command: 'CHALLENGE_IDEA' })
+                  .catch(e => logger.error(String(e.message), e))
+              }
+            }
+          ]
         }
       ]
     },
@@ -640,7 +721,7 @@ export default function getMenu (
       submenu: [
         {
           id: 'menu.about',
-          label: trans('About Zettlr'),
+          label: trans('About Mint Stylus'),
           click: function (_menuitem, _focusedWindow) {
             windows.showAboutWindow()
           }
@@ -725,7 +806,10 @@ export default function getMenu (
 
   // Finally, before returning, make sure to remove the debug menu if applicable
   if (config.get('debug') === false) {
-    menu.splice(4, 1)
+    // NOTE (Mint Stylus, AI-created): index shifted 4 -> 5 because the AI menu
+    // was inserted at array index 2 (after the macOS app menu and File menu),
+    // pushing the debug-menu down by one slot.
+    menu.splice(5, 1)
   }
 
   return menu

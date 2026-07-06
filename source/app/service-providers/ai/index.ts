@@ -1,0 +1,735 @@
+/**
+ * @ignore
+ * BEGIN HEADER
+ *
+ * Contains:        AIProvider
+ * CVM-Role:        Service Provider
+ * Maintainer:      Mint Stylus
+ * License:         GNU GPL v3
+ *
+ * Description:     The AI service provider. This is the ONLY place in the whole
+ *                  application that holds API keys or makes AI/search HTTP
+ *                  requests. The renderer communicates exclusively over the
+ *                  'ai-provider' IPC channel by sending { command, payload }
+ *                  objects and receiving text / streamed deltas back. A key is
+ *                  never sent to, nor readable from, the renderer: keys are
+ *                  encrypted with Electron safeStorage and decrypted only inside
+ *                  the outbound request. There is deliberately NO 'get-key'
+ *                  command.
+ *
+ *                  ==== AI-created for Mint Stylus ====
+ *                  This file was authored by AI as part of the Mint Stylus fork
+ *                  of Zettlr. It has no upstream Zettlr counterpart.
+ *
+ * END HEADER
+ */
+
+import path from 'path'
+import { promises as fs } from 'fs'
+import { app, ipcMain, safeStorage } from 'electron'
+import type { IpcMainInvokeEvent } from 'electron'
+import ProviderContract from '../provider-contract'
+import type { IPCAPI } from '../provider-contract'
+import type LogProvider from '../log'
+import type ConfigProvider from '../config'
+import PersistentDataContainer from '@common/modules/persistent-data-container'
+import {
+  chatCompletion,
+  listModels,
+  validateOpenRouterKey,
+  type ChatMessage
+} from './openai-client'
+import { runSearch, type SearchProvider as WebSearchProvider } from './search'
+import { buildMessages } from './prompts'
+
+/**
+ * The canonical base URLs per provider. The renderer may override the baseURL in
+ * a request payload, but these defaults let it send only a provider id.
+ */
+const PROVIDER_BASE_URLS: Record<string, string> = {
+  openrouter: 'https://openrouter.ai/api/v1',
+  zai: 'https://api.z.ai/api/paas/v4',
+  'ollama-cloud': 'https://ollama.com/v1',
+  'ollama-local': 'http://localhost:11434/v1'
+}
+
+/**
+ * The default provider used when a request omits one.
+ */
+const DEFAULT_PROVIDER = 'openrouter'
+
+/**
+ * The default model used when a request omits one.
+ */
+const DEFAULT_MODEL = 'z-ai/glm-5.2'
+
+/**
+ * OpenRouter attribution headers (optional, for the app-rankings program). Sent
+ * only for OpenRouter requests.
+ */
+const OPENROUTER_HEADERS: Record<string, string> = {
+  'HTTP-Referer': 'https://mint-stylus.app',
+  'X-OpenRouter-Title': 'Mint Stylus'
+}
+
+/**
+ * The filename (under userData) that stores the encrypted per-provider API keys.
+ * Shape on disk: { [provider: string]: base64String }.
+ */
+const KEY_STORE_FILE = 'ai-keys.json'
+
+/**
+ * The filename (under userData) of the "Write in My Style" guide the user can
+ * author. Its contents are prepended (as a system message) to every chat.
+ */
+const STYLE_FILE = 'mint-style.md'
+
+/**
+ * The on-disk key-store shape. Each value is either a base64-encoded encrypted
+ * buffer, or — when encryption is unavailable — a plaintext key flagged with a
+ * sentinel prefix (see PLAINTEXT_PREFIX) so we never silently treat a plaintext
+ * key as ciphertext.
+ */
+type KeyStore = Record<string, string>
+
+/**
+ * Marks a stored value as plaintext (used only when safeStorage encryption is
+ * unavailable on the platform, e.g. a Linux box with no keyring). The base64 of
+ * a real encrypted buffer will never begin with this ASCII marker.
+ */
+const PLAINTEXT_PREFIX = 'plaintext:'
+
+/**
+ * The typed IPC API this provider understands. Every command the renderer can
+ * send over the 'ai-provider' channel is enumerated here. NOTE that there is no
+ * 'get-key' — a decrypted key is never returned to the renderer.
+ */
+export type AIProviderIPCAPI = IPCAPI<{
+  'list-models': { provider?: string, baseURL?: string }
+  'validate-key': { provider?: string, baseURL?: string }
+  'chat': {
+    provider?: string
+    baseURL?: string
+    model?: string
+    messages: ChatMessage[]
+    system?: string
+    pageContext?: string
+    temperature?: number
+    maxTokens?: number
+  }
+  'chat-stream': {
+    id: string
+    provider?: string
+    baseURL?: string
+    model?: string
+    messages: ChatMessage[]
+    system?: string
+    pageContext?: string
+    temperature?: number
+    maxTokens?: number
+  }
+  'cancel': { id: string }
+  'search': { provider?: WebSearchProvider, query: string }
+  'save-key': { provider: string, key: string }
+  'has-key': { provider: string }
+  'delete-key': { provider: string }
+  'get-style': unknown
+  'set-style': { content: string }
+}>
+
+/**
+ * The AI service provider. Mirrors the shape of the simple TargetProvider: it
+ * registers a single ipcMain.handle channel, persists small state through a
+ * PersistentDataContainer, and owns all outbound network I/O.
+ */
+export default class AIProvider extends ProviderContract {
+  /**
+   * Absolute path to the encrypted key store.
+   */
+  private readonly _keyFile: string
+  /**
+   * Persists the (encrypted) key store as JSON. Reuses the same container
+   * pattern as every other provider.
+   */
+  private readonly _keyContainer: PersistentDataContainer<KeyStore>
+  /**
+   * The in-memory copy of the key store (base64 ciphertext per provider).
+   */
+  private _keys: KeyStore
+  /**
+   * Absolute path to the "Write in My Style" file.
+   */
+  private readonly _styleFile: string
+  /**
+   * Tracks in-flight streaming requests so they can be cancelled by id.
+   */
+  private readonly _inFlight: Map<string, AbortController>
+
+  /**
+   * Construct the provider and register the IPC handler.
+   *
+   * @param  {LogProvider}     _logger  The application logger
+   * @param  {ConfigProvider}  _config  The application config provider
+   */
+  constructor (
+    private readonly _logger: LogProvider,
+    private readonly _config: ConfigProvider
+  ) {
+    super()
+
+    this._keyFile = path.join(app.getPath('userData'), KEY_STORE_FILE)
+    this._keyContainer = new PersistentDataContainer<KeyStore>(this._keyFile, 'json')
+    this._keys = {}
+    this._styleFile = path.join(app.getPath('userData'), STYLE_FILE)
+    this._inFlight = new Map()
+
+    ipcMain.handle('ai-provider', async (event, payload: AIProviderIPCAPI) => {
+      try {
+        return await this._handle(event, payload)
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err)
+        this._logger.error(`[AIProvider] Command "${payload?.command}" failed: ${message}`, err)
+        // Re-throw so the renderer's invoke() rejects and can show the error.
+        throw err
+      }
+    })
+  }
+
+  /**
+   * Load the encrypted key store from disk (initialising it on first run).
+   */
+  public async boot (): Promise<void> {
+    if (!await this._keyContainer.isInitialized()) {
+      await this._keyContainer.init({})
+      this._keys = {}
+    } else {
+      const stored = await this._keyContainer.get()
+      this._keys = (stored ?? {}) as KeyStore
+    }
+
+    if (!safeStorage.isEncryptionAvailable()) {
+      this._logger.warning('[AIProvider] safeStorage encryption is NOT available on this platform. API keys will be stored in plaintext under userData. Consider configuring a system keyring.')
+    }
+  }
+
+  /**
+   * Cancel any in-flight streams and flush the key store to disk.
+   */
+  public async shutdown (): Promise<void> {
+    this._logger.verbose('[AIProvider] AI provider shutting down …')
+    for (const controller of this._inFlight.values()) {
+      controller.abort()
+    }
+    this._inFlight.clear()
+    this._keyContainer.shutdown()
+  }
+
+  /**
+   * Dispatch a single IPC command. Extracted so the constructor's handler can
+   * wrap it in uniform error logging.
+   *
+   * @param   {Electron.IpcMainInvokeEvent}  event    The IPC event (for sender)
+   * @param   {AIProviderIPCAPI}             payload  The typed command payload
+   *
+   * @return  {Promise<any>}                          The command result
+   */
+  private async _handle (event: IpcMainInvokeEvent, payload: AIProviderIPCAPI): Promise<any> {
+    switch (payload.command) {
+      case 'list-models':
+        return await this._listModels(payload.payload)
+      case 'validate-key':
+        return await this._validateKey(payload.payload)
+      case 'chat':
+        return await this._chat(payload.payload)
+      case 'chat-stream':
+        return await this._chatStream(event, payload.payload)
+      case 'cancel':
+        return this._cancel(payload.payload.id)
+      case 'search':
+        return await this._search(payload.payload)
+      case 'save-key':
+        return await this._saveKey(payload.payload.provider, payload.payload.key)
+      case 'has-key':
+        return this._hasKey(payload.payload.provider)
+      case 'delete-key':
+        return await this._deleteKey(payload.payload.provider)
+      case 'get-style':
+        return await this._getStyle()
+      case 'set-style':
+        return await this._setStyle(payload.payload.content)
+      default:
+        // Exhaustiveness guard — unreachable with typed input.
+        throw new Error(`[AIProvider] Unknown command: ${String((payload as any).command)}`)
+    }
+  }
+
+  // ==========================================================================
+  // Key storage (safeStorage). NONE of these ever return a decrypted key to the
+  // renderer. Decryption happens only inside the outbound request helpers below.
+  // ==========================================================================
+
+  /**
+   * Encrypt and persist a provider's API key. This is the single inbound trip of
+   * the plaintext key (the accepted norm): the renderer sends it once at save
+   * time; from then on only ciphertext is stored and it is decrypted solely
+   * inside outbound requests.
+   *
+   * @param   {string}  provider  The provider id (e.g. 'openrouter')
+   * @param   {string}  key       The plaintext API key
+   *
+   * @return  {Promise<{ saved: boolean, encrypted: boolean }>}  Result flags
+   */
+  private async _saveKey (provider: string, key: string): Promise<{ saved: boolean, encrypted: boolean }> {
+    if (typeof provider !== 'string' || provider.length === 0) {
+      throw new Error('[AIProvider] save-key requires a provider id')
+    }
+
+    const trimmed = typeof key === 'string' ? key.trim() : ''
+    if (trimmed.length === 0) {
+      // An empty key means "clear it".
+      return await this._deleteKey(provider).then(() => ({ saved: false, encrypted: false }))
+    }
+
+    let stored: string
+    let encrypted = false
+    if (safeStorage.isEncryptionAvailable()) {
+      const buffer = await this._encrypt(trimmed)
+      stored = buffer.toString('base64')
+      encrypted = true
+    } else {
+      // No keyring available. Store as flagged plaintext rather than pretending
+      // it is ciphertext, and keep the boot-time warning honest.
+      this._logger.warning(`[AIProvider] Storing the ${provider} key WITHOUT encryption (safeStorage unavailable).`)
+      stored = `${PLAINTEXT_PREFIX}${trimmed}`
+      encrypted = false
+    }
+
+    this._keys[provider] = stored
+    this._keyContainer.set(this._keys)
+    return { saved: true, encrypted }
+  }
+
+  /**
+   * Whether a key is stored for the given provider. Returns only a boolean —
+   * never the key itself.
+   *
+   * @param   {string}   provider  The provider id
+   *
+   * @return  {boolean}            True if a non-empty key is stored
+   */
+  private _hasKey (provider: string): boolean {
+    const value = this._keys[provider]
+    return typeof value === 'string' && value.length > 0
+  }
+
+  /**
+   * Delete a provider's stored key.
+   *
+   * @param   {string}   provider  The provider id
+   *
+   * @return  {Promise<{ deleted: boolean }>}  Whether a key was removed
+   */
+  private async _deleteKey (provider: string): Promise<{ deleted: boolean }> {
+    if (this._keys[provider] === undefined) {
+      return { deleted: false }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete this._keys[provider]
+    this._keyContainer.set(this._keys)
+    return { deleted: true }
+  }
+
+  /**
+   * Decrypt a provider's stored key for use in an outbound request. PRIVATE and
+   * never reachable over IPC — this is the only path that yields plaintext, and
+   * its result is used solely to set an Authorization header.
+   *
+   * @param   {string}  provider  The provider id
+   *
+   * @return  {Promise<string>}   The decrypted key, or '' if none is stored
+   */
+  private async _decryptKey (provider: string): Promise<string> {
+    const stored = this._keys[provider]
+    if (typeof stored !== 'string' || stored.length === 0) {
+      return ''
+    }
+
+    if (stored.startsWith(PLAINTEXT_PREFIX)) {
+      return stored.slice(PLAINTEXT_PREFIX.length)
+    }
+
+    if (!safeStorage.isEncryptionAvailable()) {
+      // We have ciphertext but no way to decrypt it (keyring vanished). Fail
+      // loudly rather than sending garbage as a key.
+      throw new Error(`[AIProvider] A key is stored for "${provider}" but safeStorage encryption is unavailable to decrypt it.`)
+    }
+
+    const buffer = Buffer.from(stored, 'base64')
+    return await this._decrypt(buffer)
+  }
+
+  /**
+   * Encrypt a string, preferring the async safeStorage variant when present and
+   * falling back to the synchronous one otherwise.
+   *
+   * @param   {string}  plaintext  The value to encrypt
+   *
+   * @return  {Promise<Buffer>}    The encrypted buffer
+   */
+  private async _encrypt (plaintext: string): Promise<Buffer> {
+    const anyStore = safeStorage as unknown as {
+      encryptStringAsync?: (s: string) => Promise<Buffer>
+      encryptString: (s: string) => Buffer
+    }
+    if (typeof anyStore.encryptStringAsync === 'function') {
+      return await anyStore.encryptStringAsync(plaintext)
+    }
+    return anyStore.encryptString(plaintext)
+  }
+
+  /**
+   * Decrypt a buffer, preferring the async safeStorage variant when present and
+   * falling back to the synchronous one otherwise.
+   *
+   * @param   {Buffer}  buffer  The encrypted buffer
+   *
+   * @return  {Promise<string>}  The decrypted plaintext
+   */
+  private async _decrypt (buffer: Buffer): Promise<string> {
+    const anyStore = safeStorage as unknown as {
+      decryptStringAsync?: (b: Buffer) => Promise<string>
+      decryptString: (b: Buffer) => string
+    }
+    if (typeof anyStore.decryptStringAsync === 'function') {
+      return await anyStore.decryptStringAsync(buffer)
+    }
+    return anyStore.decryptString(buffer)
+  }
+
+  // ==========================================================================
+  // Provider resolution helpers
+  // ==========================================================================
+
+  /**
+   * Resolve the provider id from a payload, falling back to the configured
+   * default provider, then to DEFAULT_PROVIDER.
+   */
+  private _resolveProvider (payloadProvider?: string): string {
+    if (typeof payloadProvider === 'string' && payloadProvider.length > 0) {
+      return payloadProvider
+    }
+    const configured = this._readConfig<string>('ai.provider')
+    return (typeof configured === 'string' && configured.length > 0) ? configured : DEFAULT_PROVIDER
+  }
+
+  /**
+   * Resolve the base URL for a request: an explicit payload baseURL wins, then
+   * a configured baseURL, then the canonical per-provider default.
+   */
+  private _resolveBaseURL (provider: string, payloadBaseURL?: string): string {
+    if (typeof payloadBaseURL === 'string' && payloadBaseURL.length > 0) {
+      return payloadBaseURL
+    }
+    const configured = this._readConfig<string>('ai.baseURL')
+    if (typeof configured === 'string' && configured.length > 0) {
+      return configured
+    }
+    return PROVIDER_BASE_URLS[provider] ?? PROVIDER_BASE_URLS[DEFAULT_PROVIDER]
+  }
+
+  /**
+   * Resolve the model for a request: an explicit payload model wins, then a
+   * configured model, then DEFAULT_MODEL.
+   */
+  private _resolveModel (payloadModel?: string): string {
+    if (typeof payloadModel === 'string' && payloadModel.length > 0) {
+      return payloadModel
+    }
+    const configured = this._readConfig<string>('ai.model')
+    return (typeof configured === 'string' && configured.length > 0) ? configured : DEFAULT_MODEL
+  }
+
+  /**
+   * Compute the extra headers for a provider (OpenRouter attribution headers).
+   */
+  private _extraHeaders (provider: string): Record<string, string> | undefined {
+    if (provider === 'openrouter') {
+      return { ...OPENROUTER_HEADERS }
+    }
+    return undefined
+  }
+
+  /**
+   * Read a config value defensively. The `ai` config group is added by a sibling
+   * agent; until it exists (or if the key is absent) this returns undefined
+   * rather than throwing, so the provider degrades to its own defaults.
+   */
+  private _readConfig<T> (key: string): T | undefined {
+    try {
+      return this._config.get(key) as T
+    } catch {
+      return undefined
+    }
+  }
+
+  // ==========================================================================
+  // Model listing / key validation
+  // ==========================================================================
+
+  /**
+   * List the models available at a provider's endpoint. OpenRouter needs no
+   * auth; other endpoints get the Bearer key if one is stored.
+   */
+  private async _listModels (payload: { provider?: string, baseURL?: string }): Promise<any[]> {
+    const provider = this._resolveProvider(payload.provider)
+    const baseURL = this._resolveBaseURL(provider, payload.baseURL)
+    // OpenRouter model listing needs no key. For other backends, pass the key
+    // if we have one (some require it, local Ollama ignores it).
+    const apiKey = provider === 'openrouter' ? '' : await this._decryptKey(provider)
+    return await listModels(baseURL, apiKey, this._extraHeaders(provider))
+  }
+
+  /**
+   * Validate an OpenRouter key and return its quota info ({ limit, usage, … }).
+   * Only OpenRouter exposes a /key endpoint; other providers reject.
+   */
+  private async _validateKey (payload: { provider?: string, baseURL?: string }): Promise<any> {
+    const provider = this._resolveProvider(payload.provider)
+    if (provider !== 'openrouter') {
+      throw new Error(`[AIProvider] Key validation is only supported for OpenRouter (got "${provider}").`)
+    }
+    const baseURL = this._resolveBaseURL(provider, payload.baseURL)
+    const apiKey = await this._decryptKey(provider)
+    if (apiKey === '') {
+      throw new Error('[AIProvider] No OpenRouter key is stored to validate.')
+    }
+    return await validateOpenRouterKey(apiKey, baseURL)
+  }
+
+  // ==========================================================================
+  // Chat (non-streaming) and Chat-stream (SSE / NDJSON forwarded to renderer)
+  // ==========================================================================
+
+  /**
+   * Assemble the final message list for a chat request: the "Write in My Style"
+   * guide is always prepended (as a leading system message) via buildMessages,
+   * along with any per-request system prompt and whole-page context. The
+   * caller's `messages` array carries the conversation turns.
+   */
+  private async _assembleMessages (payload: {
+    messages: ChatMessage[]
+    system?: string
+    pageContext?: string
+  }): Promise<ChatMessage[]> {
+    const style = await this._getStyle()
+    const turns = Array.isArray(payload.messages) ? payload.messages : []
+
+    // Separate any leading system turns the caller already supplied from the
+    // user/assistant turns so buildMessages can put the style FIRST.
+    const priorSystem = turns.filter(m => m.role === 'system').map(m => m.content)
+    const conversation = turns.filter(m => m.role !== 'system')
+
+    // The last user turn is the "user" content buildMessages expects; earlier
+    // conversation turns are preserved by prepending them after the style/system
+    // preamble.
+    const lastUserIndex = [ ...conversation ].reverse().findIndex(m => m.role === 'user')
+    const userContent = lastUserIndex === -1
+      ? ''
+      : conversation[conversation.length - 1 - lastUserIndex].content
+
+    // Fold the caller's own system prompts and the explicit payload.system into
+    // one system string so nothing is lost.
+    const systemParts = [ ...priorSystem ]
+    if (typeof payload.system === 'string' && payload.system.trim().length > 0) {
+      systemParts.push(payload.system.trim())
+    }
+    const system = systemParts.length > 0 ? systemParts.join('\n\n') : undefined
+
+    const preamble = buildMessages({
+      style,
+      system,
+      user: userContent,
+      pageContext: payload.pageContext
+    })
+
+    // buildMessages returns [ ...systemMessages, { user } ]. Re-attach any
+    // earlier conversation turns (everything before the final user turn) between
+    // the system preamble and that final user turn so multi-turn context is kept.
+    const preambleSystem = preamble.filter(m => m.role === 'system')
+    const earlierTurns = lastUserIndex === -1
+      ? conversation
+      : conversation.slice(0, conversation.length - 1 - lastUserIndex)
+    const finalUser = preamble.filter(m => m.role === 'user')
+
+    return [ ...preambleSystem, ...earlierTurns, ...finalUser ]
+  }
+
+  /**
+   * Perform a non-streaming chat completion and return the assistant text.
+   */
+  private async _chat (payload: {
+    provider?: string
+    baseURL?: string
+    model?: string
+    messages: ChatMessage[]
+    system?: string
+    pageContext?: string
+    temperature?: number
+    maxTokens?: number
+  }): Promise<string> {
+    const provider = this._resolveProvider(payload.provider)
+    const baseURL = this._resolveBaseURL(provider, payload.baseURL)
+    const model = this._resolveModel(payload.model)
+    const apiKey = await this._decryptKey(provider)
+    const messages = await this._assembleMessages(payload)
+
+    return await chatCompletion({
+      baseURL,
+      apiKey,
+      model,
+      messages,
+      stream: false,
+      extraHeaders: this._extraHeaders(provider),
+      temperature: payload.temperature,
+      maxTokens: payload.maxTokens
+    })
+  }
+
+  /**
+   * Perform a streaming chat completion. Each content delta is forwarded to the
+   * requesting renderer via event.sender.send('ai-stream', { id, delta }). A
+   * final 'ai-stream' message with `done: true` (and the full text) is sent when
+   * the stream completes; an error message is sent (and the promise rejects) on
+   * failure. Cancellation is supported via the 'cancel' command keyed by `id`.
+   */
+  private async _chatStream (event: IpcMainInvokeEvent, payload: {
+    id: string
+    provider?: string
+    baseURL?: string
+    model?: string
+    messages: ChatMessage[]
+    system?: string
+    pageContext?: string
+    temperature?: number
+    maxTokens?: number
+  }): Promise<{ id: string, text: string }> {
+    const { id } = payload
+    if (typeof id !== 'string' || id.length === 0) {
+      throw new Error('[AIProvider] chat-stream requires a string id for cancellation.')
+    }
+
+    const provider = this._resolveProvider(payload.provider)
+    const baseURL = this._resolveBaseURL(provider, payload.baseURL)
+    const model = this._resolveModel(payload.model)
+    const apiKey = await this._decryptKey(provider)
+    const messages = await this._assembleMessages(payload)
+
+    const controller = new AbortController()
+    this._inFlight.set(id, controller)
+
+    const send = (msg: Record<string, any>): void => {
+      // The sender may have been destroyed (window closed) mid-stream.
+      if (!event.sender.isDestroyed()) {
+        event.sender.send('ai-stream', { id, ...msg })
+      }
+    }
+
+    try {
+      const text = await chatCompletion({
+        baseURL,
+        apiKey,
+        model,
+        messages,
+        stream: true,
+        signal: controller.signal,
+        extraHeaders: this._extraHeaders(provider),
+        temperature: payload.temperature,
+        maxTokens: payload.maxTokens,
+        onDelta: (delta: string) => { send({ delta }) }
+      })
+
+      send({ done: true, text })
+      return { id, text }
+    } catch (err: unknown) {
+      const aborted = controller.signal.aborted
+      const message = err instanceof Error ? err.message : String(err)
+      if (aborted) {
+        send({ cancelled: true })
+      } else {
+        send({ error: message })
+      }
+      throw err
+    } finally {
+      this._inFlight.delete(id)
+    }
+  }
+
+  /**
+   * Cancel an in-flight streaming request by id.
+   */
+  private _cancel (id: string): { cancelled: boolean } {
+    const controller = this._inFlight.get(id)
+    if (controller === undefined) {
+      return { cancelled: false }
+    }
+    controller.abort()
+    this._inFlight.delete(id)
+    return { cancelled: true }
+  }
+
+  // ==========================================================================
+  // Web search (delegated to the search module) — key stays in main
+  // ==========================================================================
+
+  /**
+   * Run a web search on behalf of the AI and return the structured response +
+   * ready-to-inject RAG block. The search key is decrypted here and never
+   * leaves the main process.
+   */
+  private async _search (payload: { provider?: WebSearchProvider, query: string }): Promise<any> {
+    const configuredProvider = this._readConfig<WebSearchProvider>('ai.searchProvider')
+    const searchProvider: WebSearchProvider = payload.provider
+      ?? (configuredProvider ?? 'tavily')
+
+    // Search keys are stored under a distinct namespace so they never collide
+    // with LLM provider keys (e.g. 'openrouter').
+    const apiKey = await this._decryptKey(`search:${searchProvider}`)
+
+    return await runSearch({
+      provider: searchProvider,
+      apiKey,
+      query: payload.query
+    })
+  }
+
+  // ==========================================================================
+  // "Write in My Style" file
+  // ==========================================================================
+
+  /**
+   * Read the "Write in My Style" guide. Returns '' if the file does not exist.
+   */
+  private async _getStyle (): Promise<string> {
+    try {
+      return await fs.readFile(this._styleFile, { encoding: 'utf-8' })
+    } catch (err: any) {
+      if (err?.code === 'ENOENT') {
+        return ''
+      }
+      throw err
+    }
+  }
+
+  /**
+   * Write the "Write in My Style" guide.
+   *
+   * @param   {string}  content  The new style-guide contents
+   *
+   * @return  {Promise<{ saved: boolean }>}  Result flag
+   */
+  private async _setStyle (content: string): Promise<{ saved: boolean }> {
+    const text = typeof content === 'string' ? content : ''
+    await fs.writeFile(this._styleFile, text, { encoding: 'utf-8' })
+    return { saved: true }
+  }
+}

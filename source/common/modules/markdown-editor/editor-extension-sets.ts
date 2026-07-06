@@ -76,6 +76,10 @@ import { vimPlugin } from './plugins/vim-mode'
 import { projectInfoField } from './plugins/project-info-field'
 import { headingGutter } from './renderers/render-headings'
 import { citationTooltips } from './tooltips/citations'
+// created by AI for Mint Stylus
+import { qqInline } from './plugins/qq-inline'
+// created by AI for Mint Stylus
+import { aiSelectionMenu, type AISelection } from './plugins/ai-selection-menu'
 
 /**
  * This interface describes the required properties which the extension sets
@@ -334,6 +338,32 @@ export function getMarkdownExtensions (options: CoreExtensionOptions): Extension
     urlHover,
     filePreview,
     citationTooltips,
+    // created by AI for Mint Stylus: inline `QQ … QQ` questions answered by the
+    // AIProvider (main process) via the narrow `window.ai` bridge. The renderer
+    // only ever sends the question text and receives markdown back — no key.
+    qqInline(async (question: string): Promise<string> => {
+      return await window.ai.chat({
+        messages: [
+          { role: 'system', content: 'You are an inline writing assistant. Answer the question concisely. Respond in Markdown.' },
+          { role: 'user', content: question }
+        ]
+      })
+    }),
+    // created by AI for Mint Stylus: the floating "Summarize | Command" bubble
+    // shown above a non-empty selection. This module is created centrally and
+    // has no direct access to the Pinia AI store, so the two button handlers
+    // simply re-broadcast the selection ({ from, to, text }) as DOM CustomEvents
+    // on `window`. The renderer (App.vue / MainEditor) listens for
+    // 'mint-ai-summarize' / 'mint-ai-command' and opens the AI panel via the
+    // store. No AI/HTTP call happens here — that all lives in the main process.
+    aiSelectionMenu({
+      onSummarize (selection: AISelection): void {
+        window.dispatchEvent(new CustomEvent<AISelection>('mint-ai-summarize', { detail: selection }))
+      },
+      onCommand (selection: AISelection): void {
+        window.dispatchEvent(new CustomEvent<AISelection>('mint-ai-command', { detail: selection }))
+      }
+    }),
     backgroundLayers, // Add a background behind inline code and code blocks
     defaultContextMenu, // A default context menu
     softwrapVisualIndent, // Always indent visually
