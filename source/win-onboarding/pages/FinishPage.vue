@@ -29,8 +29,8 @@ import { trans } from 'source/common/i18n-renderer'
 import SupportLogos from '../SupportLogos.vue'
 
 const pageHeading = trans('You\'re All Set!')
-const outroStart = trans('We wish you a great writing experience! Remember to take a look at the preferences to tweak Zettlr even more.')
-const helpInfo = trans('If anything comes up, and you need help, encounter a bug, or have an idea for a new feature, please get in touch with us. Zettlr is maintained by a global community of excellent volunteers who will help you out.')
+const outroStart = trans('We wish you a great writing experience! Remember to take a look at the preferences to tweak Mint Stylus even more.')
+const helpInfo = trans('If anything comes up, and you need help, encounter a bug, or have an idea for a new feature, please get in touch with us. Mint Stylus is based on Zettlr, which is maintained by a global community of excellent volunteers who will help you out.')
 
 const discordLabel = trans('Join our Discord Server')
 const forumLabel = trans('Join our Community Forum')

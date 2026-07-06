@@ -41,27 +41,15 @@ import {
 } from './openai-client'
 import { runSearch, type SearchProvider as WebSearchProvider } from './search'
 import { buildMessages } from './prompts'
+import { DEFAULT_PROVIDER, getProviderInfo } from '@common/util/ai-providers'
 
-/**
- * The canonical base URLs per provider. The renderer may override the baseURL in
- * a request payload, but these defaults let it send only a provider id.
- */
-const PROVIDER_BASE_URLS: Record<string, string> = {
-  openrouter: 'https://openrouter.ai/api/v1',
-  zai: 'https://api.z.ai/api/paas/v4',
-  'ollama-cloud': 'https://ollama.com/v1',
-  'ollama-local': 'http://localhost:11434/v1'
-}
-
-/**
- * The default provider used when a request omits one.
- */
-const DEFAULT_PROVIDER = 'openrouter'
-
-/**
- * The default model used when a request omits one.
- */
-const DEFAULT_MODEL = 'z-ai/glm-5.2'
+// Re-export the shared provider catalogue so callers importing from the AI
+// service can reach it here too. PROVIDERS is the ONE source of truth for
+// provider slugs, fixed base URLs, key requirements, and default models; it
+// lives in a renderer-safe module (no Electron/Node imports) so the preferences
+// and onboarding UIs can build their dropdowns from the exact same object.
+export { PROVIDERS, DEFAULT_PROVIDER, PROVIDER_SLUGS, getProviderInfo, isProviderSlug } from '@common/util/ai-providers'
+export type { AIProviderInfo, AIProviderSlug } from '@common/util/ai-providers'
 
 /**
  * OpenRouter attribution headers (optional, for the app-rankings program). Sent
@@ -494,8 +482,11 @@ export default class AIProvider extends ProviderContract {
   }
 
   /**
-   * Resolve the base URL for a request: an explicit payload baseURL wins, then
-   * a configured baseURL, then the canonical per-provider default.
+   * Resolve the base URL for a request. The base URL is derived AUTOMATICALLY
+   * from the provider (see PROVIDERS) so users never see or type an endpoint.
+   * Order of precedence: an explicit payload baseURL wins (internal use), then a
+   * non-empty configured `ai.baseURL` as an ADVANCED override (never surfaced in
+   * the UI; empty by default), then the provider's fixed canonical base URL.
    */
   private _resolveBaseURL (provider: string, payloadBaseURL?: string): string {
     if (typeof payloadBaseURL === 'string' && payloadBaseURL.length > 0) {
@@ -505,19 +496,22 @@ export default class AIProvider extends ProviderContract {
     if (typeof configured === 'string' && configured.length > 0) {
       return configured
     }
-    return PROVIDER_BASE_URLS[provider] ?? PROVIDER_BASE_URLS[DEFAULT_PROVIDER]
+    return getProviderInfo(provider).baseURL
   }
 
   /**
    * Resolve the model for a request: an explicit payload model wins, then a
-   * configured model, then DEFAULT_MODEL.
+   * configured `ai.model`, then the provider's default model (see PROVIDERS).
    */
-  private _resolveModel (payloadModel?: string): string {
+  private _resolveModel (provider: string, payloadModel?: string): string {
     if (typeof payloadModel === 'string' && payloadModel.length > 0) {
       return payloadModel
     }
     const configured = this._readConfig<string>('ai.model')
-    return (typeof configured === 'string' && configured.length > 0) ? configured : DEFAULT_MODEL
+    if (typeof configured === 'string' && configured.length > 0) {
+      return configured
+    }
+    return getProviderInfo(provider).defaultModel
   }
 
   /**
@@ -656,7 +650,7 @@ export default class AIProvider extends ProviderContract {
   }): Promise<string> {
     const provider = this._resolveProvider(payload.provider)
     const baseURL = this._resolveBaseURL(provider, payload.baseURL)
-    const model = this._resolveModel(payload.model)
+    const model = this._resolveModel(provider, payload.model)
     const apiKey = await this._decryptKey(provider)
     const messages = await this._assembleMessages(payload)
 
@@ -697,7 +691,7 @@ export default class AIProvider extends ProviderContract {
 
     const provider = this._resolveProvider(payload.provider)
     const baseURL = this._resolveBaseURL(provider, payload.baseURL)
-    const model = this._resolveModel(payload.model)
+    const model = this._resolveModel(provider, payload.model)
     const apiKey = await this._decryptKey(provider)
     const messages = await this._assembleMessages(payload)
 

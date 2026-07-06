@@ -39,16 +39,16 @@ import { ref, watch } from 'vue'
 import { DateTime } from 'luxon'
 
 const pageHeading = trans('Look and Feel')
-const darkModeLabel = trans('Zettlr supports both light and dark mode. You can turn it on manually here.')
+const darkModeLabel = trans('Mint Stylus supports both light and dark mode. You can turn it on manually here.')
 const darkModeControlLabel = trans('Activate dark mode')
-const darkModeScheduleLabel = trans('Do you wish to let Zettlr automatically switch to dark mode?')
+const darkModeScheduleLabel = trans('Do you wish to let Mint Stylus automatically switch to dark mode?')
 
 const autoDarkModeStart = window.config.get('autoDarkModeStart')
 const autoDarkModeEnd = window.config.get('autoDarkModeEnd')
 const dmStart = DateTime.fromFormat(String(autoDarkModeStart), 'HH:mm', { locale: window.config.get('appLang') }).toLocaleString({ timeStyle: 'short' })
 const dmEnd = DateTime.fromFormat(String(autoDarkModeEnd), 'HH:mm', { locale: window.config.get('appLang') }).toLocaleString({ timeStyle: 'short' })
 
-const darkModeScheduleTimesInfo = trans('If you choose "schedule," Zettlr will turn on dark mode between %s and %s. You can adjust these times in the settings.', dmStart, dmEnd)
+const darkModeScheduleTimesInfo = trans('If you choose "schedule," Mint Stylus will turn on dark mode between %s and %s. You can adjust these times in the settings.', dmStart, dmEnd)
 
 const darkModeScheduleOptions = {
   off: trans('Do not automatically toggle light/dark mode'),

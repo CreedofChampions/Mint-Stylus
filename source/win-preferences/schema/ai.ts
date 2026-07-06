@@ -23,6 +23,32 @@ import { type PreferencesFieldset } from '../App.vue'
 import { PreferencesGroups } from './_preferences-groups'
 
 /**
+ * The list of AI providers, their friendly labels, and whether they require an
+ * API key. This is inlined here because the shared renderer-safe list
+ * (source/common/util/ai-providers.ts) does not exist yet. If/when that module
+ * lands, replace this with an import from there to keep a single source of
+ * truth. The slugs MUST match the AIProvider main service
+ * (source/app/service-providers/ai/index.ts) and the config validation.
+ */
+interface AIProviderDescriptor {
+  slug: string
+  label: string
+  needsKey: boolean
+}
+
+const PROVIDERS: AIProviderDescriptor[] = [
+  { slug: 'openrouter', label: 'OpenRouter', needsKey: true },
+  { slug: 'ollama-cloud', label: 'Ollama Cloud', needsKey: true },
+  { slug: 'zai', label: 'Z.ai (GLM)', needsKey: true },
+  { slug: 'ollama-local', label: 'Ollama (local)', needsKey: false }
+]
+
+/** Provider slug → friendly label, for the select field options. */
+const PROVIDER_OPTIONS: Record<string, string> = Object.fromEntries(
+  PROVIDERS.map(p => [p.slug, p.label])
+)
+
+/**
  * Prompts for an API key and stores it (encrypted, in main) for the given
  * provider. The plaintext key only ever travels inbound to saveKey; it is never
  * read back out into the renderer, preserving contextIsolation guarantees.
@@ -56,6 +82,26 @@ function promptForKey (provider: string, label: string): void {
 }
 
 /**
+ * Sets the API key for the CURRENTLY-SELECTED AI provider. Reads the live
+ * ai.provider value from config, resolves its descriptor, and either informs
+ * the user that no key is required (ollama-local) or prompts for and stores the
+ * key. The base URL is derived automatically from the provider in the main
+ * process; the user never sees or types it.
+ */
+function setKeyForSelectedProvider (): void {
+  const slug = String(window.config.get('ai.provider') ?? 'openrouter')
+  const provider = PROVIDERS.find(p => p.slug === slug)
+  const label = provider?.label ?? slug
+
+  if (provider !== undefined && !provider.needsKey) {
+    window.alert(trans('%s runs locally and does not require an API key.', label))
+    return
+  }
+
+  promptForKey(slug, label)
+}
+
+/**
  * Opens the "Write in My Style" precursor text for editing. Reads the current
  * value via window.ai.getStyle(), lets the user edit it inline, and persists it
  * with window.ai.setStyle(). All key/HTTP/file work stays in the main process.
@@ -85,56 +131,26 @@ export function getAIFields (): PreferencesFieldset[] {
     {
       title: trans('Provider'),
       group: PreferencesGroups.AI,
-      infoString: trans('Choose which AI provider Mint Stylus should use. API keys are stored securely and never leave the main process.'),
+      infoString: trans('Pick your AI provider and enter its API key. Everything else is configured automatically. API keys are stored securely and never leave the main process.'),
       help: undefined,
       fields: [
         {
           type: 'select',
           label: trans('AI provider'),
           model: 'ai.provider',
-          options: {
-            openrouter: 'OpenRouter',
-            zai: 'Z.ai',
-            'ollama-cloud': 'Ollama Cloud',
-            'ollama-local': 'Ollama (local)'
-          }
+          options: PROVIDER_OPTIONS
         },
         {
-          type: 'text',
-          label: trans('Base URL'),
-          model: 'ai.baseURL',
-          reset: 'https://openrouter.ai/api/v1',
-          info: trans('The OpenAI-compatible API endpoint for the selected provider.')
+          type: 'button',
+          label: trans('Set API key…'),
+          onClick: () => { setKeyForSelectedProvider() }
         },
         {
           type: 'text',
           label: trans('Model'),
           model: 'ai.model',
-          reset: 'z-ai/glm-5.2',
-          info: trans('The model identifier to use (e.g. z-ai/glm-5.2). Available models can be discovered from your provider.')
-        }
-      ]
-    },
-    {
-      title: trans('API Keys'),
-      group: PreferencesGroups.AI,
-      infoString: trans('API keys are encrypted by the main process and are never stored in your configuration file or shown again.'),
-      help: undefined,
-      fields: [
-        {
-          type: 'button',
-          label: trans('Set OpenRouter key…'),
-          onClick: () => { promptForKey('openrouter', 'OpenRouter') }
-        },
-        {
-          type: 'button',
-          label: trans('Set Tavily key…'),
-          onClick: () => { promptForKey('tavily', 'Tavily') }
-        },
-        {
-          type: 'button',
-          label: trans('Set Brave key…'),
-          onClick: () => { promptForKey('brave', 'Brave') }
+          placeholder: trans('leave blank to use the provider default'),
+          info: trans('Optional. Leave blank to use the provider default, or enter a specific model identifier.')
         }
       ]
     },
@@ -152,6 +168,20 @@ export function getAIFields (): PreferencesFieldset[] {
             tavily: 'Tavily',
             brave: 'Brave',
             none: trans('None')
+          }
+        },
+        {
+          type: 'button',
+          label: trans('Set search key…'),
+          onClick: () => {
+            const provider = String(window.config.get('ai.searchProvider') ?? 'none')
+            if (provider === 'tavily') {
+              promptForKey('tavily', 'Tavily')
+            } else if (provider === 'brave') {
+              promptForKey('brave', 'Brave')
+            } else {
+              window.alert(trans('Select a search provider first to set its key.'))
+            }
           }
         }
       ]

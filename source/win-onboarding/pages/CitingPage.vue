@@ -35,9 +35,9 @@ import RadioControl from 'source/common/vue/form/elements/RadioControl.vue'
 import { ref, watch } from 'vue'
 
 const pageHeading = trans('Citations')
-const libraryLabel = trans('If you already have a library of references, you can select it here to make all your stored reference items available to Zettlr.')
+const libraryLabel = trans('If you already have a library of references, you can select it here to make all your stored reference items available to Mint Stylus.')
 const learnMoreLabel = trans('Learn how to export your Zotero library')
-const citeStyleLabel = trans('Different academic fields have different citation styles. Here you choose which one Zettlr uses when you autocomplete citations.')
+const citeStyleLabel = trans('Different academic fields have different citation styles. Here you choose which one Mint Stylus uses when you autocomplete citations.')
 
 const libraryFilters = [
   { extensions: [ 'json', 'yaml', 'yml', 'bib' ], name: 'CSL JSON or BibTeX' },

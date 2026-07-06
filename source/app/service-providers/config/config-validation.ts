@@ -42,8 +42,10 @@ const RULES = {
   'watchdog.stabilityThreshold': 'optional|number|min:1|max:100000|default:1000',
   // Mint Stylus AI configuration (added for the AI-native fork)
   'ai.provider': 'required|string|in:openrouter,zai,ollama-cloud,ollama-local|default:openrouter',
-  'ai.baseURL': 'required|string|default:https://openrouter.ai/api/v1',
-  'ai.model': 'required|string|default:z-ai/glm-5.2',
+  // baseURL and model are optional advanced overrides: empty means "derive from
+  // the provider" (see PROVIDERS in @common/util/ai-providers). Never required.
+  'ai.baseURL': 'optional|string|default:',
+  'ai.model': 'optional|string|default:',
   'ai.searchProvider': 'required|string|in:tavily,brave,none|default:tavily',
   'ai.styleFilePath': 'optional|string|default:'
 }
