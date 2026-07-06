@@ -52,6 +52,13 @@ export interface ClientOptions {
   /** Optional maximum tokens to generate. */
   maxTokens?: number
   /**
+   * Optional reasoning-effort level ('low'|'medium'|'high'). When set (and not
+   * 'off'), OpenAI-compatible requests carry `reasoning_effort` (harmlessly
+   * ignored by providers that don't support it), and Ollama-native requests
+   * carry `think: true` instead (Ollama has no effort levels).
+   */
+  reasoningEffort?: string
+  /**
    * Callback invoked for every content delta while streaming. Only used when
    * `stream` is true.
    */
@@ -140,6 +147,17 @@ function buildBody (opts: ClientOptions): Record<string, any> {
     // OpenAI-compatible endpoints use max_tokens; Ollama-native ignores it
     // harmlessly (it reads options.num_predict), so passing it is safe.
     body.max_tokens = opts.maxTokens
+  }
+
+  if (typeof opts.reasoningEffort === 'string' && opts.reasoningEffort !== '' && opts.reasoningEffort !== 'off') {
+    if (isOllamaNative(opts.baseURL)) {
+      // Ollama's native API has no effort levels; `think` toggles reasoning.
+      body.think = true
+    } else {
+      // OpenAI-compatible endpoints; providers without reasoning support
+      // ignore the field harmlessly.
+      body.reasoning_effort = opts.reasoningEffort
+    }
   }
 
   return body

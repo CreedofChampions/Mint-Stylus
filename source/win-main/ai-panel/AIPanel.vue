@@ -63,10 +63,57 @@
       </template>
 
       <!-- ==================================================================
-           COMMAND MODE: streamed / final markdown output
+           COMMAND MODE: command chooser, then streamed / final markdown output
            ================================================================== -->
       <template v-else-if="aiStore.panelMode === 'command'">
-        <p v-if="!aiStore.inFlight && commandText.length === 0" class="ai-panel-empty">
+        <!-- What the chosen command will act (or acted) on -->
+        <p v-if="selectionExcerpt !== ''" class="ai-command-selection">
+          {{ trans('Selection') }}: <em>{{ selectionExcerpt }}</em>
+        </p>
+
+        <!-- COMMAND CHOOSER: no command has produced output yet, but we have a
+             captured selection — offer the five presets plus a free-text
+             instruction so the panel is always actionable. -->
+        <template v-if="showCommandChooser">
+          <p class="ai-panel-subheading">
+            {{ trans('What should the AI do with the selection?') }}
+          </p>
+          <div class="ai-command-chooser">
+            <button
+              v-for="preset in commandPresets"
+              v-bind:key="preset.key"
+              type="button"
+              class="ai-command-preset"
+              v-bind:disabled="aiStore.inFlight"
+              v-on:click="runPreset(preset.key)"
+            >
+              {{ preset.label }}
+            </button>
+          </div>
+          <form class="ai-command-custom-form" v-on:submit.prevent="runCustom">
+            <input
+              v-model="customInstruction"
+              type="text"
+              class="ai-command-custom-input"
+              v-bind:placeholder="trans('Or tell the AI what to do with the selection…')"
+              v-bind:disabled="aiStore.inFlight"
+              autocomplete="off"
+              spellcheck="true"
+            >
+            <button
+              type="submit"
+              class="ai-command-custom-run"
+              v-bind:disabled="aiStore.inFlight || customInstruction.trim() === ''"
+            >
+              {{ trans('Run') }}
+            </button>
+          </form>
+        </template>
+
+        <p
+          v-else-if="!aiStore.inFlight && commandText.length === 0"
+          class="ai-panel-empty"
+        >
           {{ trans('No output yet. Run an AI command to see its result here.') }}
         </p>
         <!--
@@ -158,9 +205,14 @@
  *                                       editor selection), plus the saved
  *                                       originals from the recover stack, each
  *                                       with a Recover button.
- *                    - 'command'      → the streamed/final markdown output,
- *                                       rendered as DOMPurify-sanitized HTML
- *                                       (raw markdown is the source of truth).
+ *                    - 'command'      → BEFORE any command has run: a command
+ *                                       chooser (the five preset buttons plus a
+ *                                       free-text instruction input) acting on
+ *                                       the store's pendingSelection. AFTER a
+ *                                       command ran: the streamed/final markdown
+ *                                       output, rendered as DOMPurify-sanitized
+ *                                       HTML (raw markdown is the source of
+ *                                       truth).
  *                    - 'conversation' → a simple message list + input box.
  *
  *                  A small header shows the current model and a close button.
@@ -219,6 +271,54 @@ const recoverStack = computed(() => aiStore.recoverStack)
  * offered at the top (matching the LIFO order the editor host recovers in).
  */
 const reversedRecoverStack = computed<AIRecoverEntry[]>(() => aiStore.recoverStack.slice().reverse())
+
+// ---------------------------------------------------------------------------
+// Command chooser
+// ---------------------------------------------------------------------------
+
+/**
+ * The five command presets the chooser offers. The keys are the COMMANDS
+ * preset names from source/app/service-providers/ai/prompts.ts, which the
+ * store's runCommand resolves to the real prompt builders.
+ */
+const commandPresets = [
+  { key: 'SHORTEN', label: trans('Shorten Text') },
+  { key: 'SUMMARIZE', label: trans('Summarize') },
+  { key: 'SYNONYMS', label: trans('Synonyms') },
+  { key: 'ALTERNATIVES', label: trans('Alternatives') },
+  { key: 'CHALLENGE_IDEA', label: trans('Challenge Idea') }
+]
+
+/**
+ * Whether to render the command chooser: we are in command mode, nothing is in
+ * flight, no command has produced output yet, and a selection has been
+ * captured to act upon (the bubble's "Command" button always captures one).
+ */
+const showCommandChooser = computed<boolean>(() => {
+  return aiStore.panelMode === 'command' &&
+    !aiStore.inFlight &&
+    aiStore.panelContent.text.length === 0 &&
+    aiStore.pendingSelection !== null
+})
+
+/**
+ * The first ~80 characters of the pending selection (whitespace collapsed), so
+ * the user can see what the chosen command will act on. Empty when no
+ * selection has been captured.
+ */
+const selectionExcerpt = computed<string>(() => {
+  const pending = aiStore.pendingSelection
+  if (pending === null) {
+    return ''
+  }
+  const text = pending.text.replace(/\s+/g, ' ').trim()
+  return text.length > 80 ? text.slice(0, 80) + '…' : text
+})
+
+/**
+ * The free-text instruction the user may type instead of picking a preset.
+ */
+const customInstruction = ref<string>('')
 
 // ---------------------------------------------------------------------------
 // Header
@@ -366,6 +466,35 @@ function recover (entry: AIRecoverEntry): void {
 }
 
 /**
+ * Runs one of the five preset commands against the captured pending selection.
+ * The store streams the result into panelContent.text, which replaces the
+ * chooser with the command output.
+ *
+ * @param  {string}  key  The COMMANDS preset key (e.g. `SHORTEN`).
+ */
+function runPreset (key: string): void {
+  const pending = aiStore.pendingSelection
+  if (pending === null || aiStore.inFlight) {
+    return
+  }
+  aiStore.runCommand(key, pending.text, pending.pageContext).catch(err => console.error(`AI command "${key}" failed`, err))
+}
+
+/**
+ * Runs the free-text instruction from the chooser's input against the captured
+ * pending selection (via the store's runCustomCommand) and clears the input.
+ */
+function runCustom (): void {
+  const pending = aiStore.pendingSelection
+  const instruction = customInstruction.value.trim()
+  if (pending === null || instruction === '' || aiStore.inFlight) {
+    return
+  }
+  customInstruction.value = ''
+  aiStore.runCustomCommand(instruction, pending.text, pending.pageContext).catch(err => console.error('AI custom command failed', err))
+}
+
+/**
  * Sends the current draft as a conversation turn through the store (which
  * streams the reply back into the transcript) and clears the input.
  */
@@ -487,6 +616,11 @@ body div#ai-panel {
 
       .option-text {
         flex: 1 1 auto;
+        // Long-input summaries are multi-paragraph (and may be bullet
+        // outlines) — preserve their line breaks instead of squashing them
+        // onto one line.
+        white-space: pre-wrap;
+        word-break: break-word;
       }
 
       &:hover {
@@ -518,6 +652,95 @@ body div#ai-panel {
 
       .form-control {
         flex: 0 0 auto;
+      }
+    }
+  }
+
+  // --- Command chooser -----------------------------------------------------
+  p.ai-command-selection {
+    flex: 0 0 auto;
+    margin: 0 0 10px 0;
+    padding: 6px 8px;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.05);
+    color: rgb(131, 131, 131);
+    word-break: break-word;
+  }
+
+  div.ai-command-chooser {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+
+    button.ai-command-preset {
+      padding: 5px 10px;
+      border: 1px solid rgba(128, 128, 128, 0.4);
+      border-radius: 6px;
+      background-color: transparent;
+      color: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+
+      &:hover:not(:disabled) {
+        background-color: rgba(0, 0, 0, 0.08);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+    }
+  }
+
+  form.ai-command-custom-form {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.06);
+
+    input.ai-command-custom-input {
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 24px;
+      border: none;
+      outline: none;
+      background-color: transparent;
+      color: inherit;
+      font-size: 13px;
+
+      &::placeholder {
+        opacity: 0.6;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+      }
+    }
+
+    button.ai-command-custom-run {
+      flex: 0 0 auto;
+      padding: 3px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: inherit;
+      font-size: 12px;
+      background-color: rgba(0, 0, 0, 0.08);
+      transition: background-color 0.2s ease, opacity 0.2s ease;
+
+      &:hover:not(:disabled) {
+        background-color: rgba(0, 0, 0, 0.16);
+      }
+
+      &:disabled {
+        opacity: 0.35;
+        cursor: default;
       }
     }
   }
@@ -645,6 +868,26 @@ body.dark div#ai-panel {
 
   div.ai-command-output code {
     background-color: rgba(255, 255, 255, 0.12);
+  }
+
+  p.ai-command-selection {
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  div.ai-command-chooser button.ai-command-preset:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  form.ai-command-custom-form {
+    background-color: rgba(255, 255, 255, 0.08);
+
+    button.ai-command-custom-run {
+      background-color: rgba(255, 255, 255, 0.1);
+
+      &:hover:not(:disabled) {
+        background-color: rgba(255, 255, 255, 0.18);
+      }
+    }
   }
 
   div.ai-conversation div.ai-message {

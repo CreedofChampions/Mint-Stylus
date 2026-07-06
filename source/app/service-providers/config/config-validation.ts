@@ -47,7 +47,8 @@ const RULES = {
   'ai.baseURL': 'optional|string|default:',
   'ai.model': 'optional|string|default:',
   'ai.searchProvider': 'required|string|in:tavily,brave,none|default:tavily',
-  'ai.styleFilePath': 'optional|string|default:'
+  'ai.styleFilePath': 'optional|string|default:',
+  'ai.thinkingLevel': 'required|string|in:off,low,medium,high|default:off'
 }
 
 export const VALIDATE_RULES = Object.values(RULES)

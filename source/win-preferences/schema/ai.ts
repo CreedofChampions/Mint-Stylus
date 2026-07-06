@@ -91,6 +91,19 @@ export function getAIFields (): PreferencesFieldset[] {
         {
           type: 'custom',
           component: AIProviderControl
+        },
+        {
+          // Global reasoning-effort level; mirrors the top-right dropdown in
+          // the main window (both read/write the same ai.thinkingLevel key).
+          type: 'select',
+          label: trans('Thinking level (reasoning effort for all AI requests)'),
+          model: 'ai.thinkingLevel',
+          options: {
+            off: trans('Off'),
+            low: trans('Low'),
+            medium: trans('Medium'),
+            high: trans('High')
+          }
         }
       ]
     },

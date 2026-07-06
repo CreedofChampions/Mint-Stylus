@@ -237,6 +237,10 @@ export interface ConfigOptions {
     model: string
     searchProvider: 'tavily'|'brave'|'none'
     styleFilePath: string
+    // Global reasoning-effort level applied to EVERY AI request (all features).
+    // 'off' sends no reasoning fields at all; providers that don't support
+    // reasoning ignore the field harmlessly.
+    thinkingLevel: 'off'|'low'|'medium'|'high'
   }
   ui: {
     fileManagerSplitSize: [number, number]
@@ -323,7 +327,8 @@ export function getConfigTemplate (): ConfigOptions {
       // Empty means "use the provider's default model" (see PROVIDERS).
       model: '',
       searchProvider: 'tavily', // tavily|brave|none
-      styleFilePath: '' // Optional path to a user-provided style guide file
+      styleFilePath: '', // Optional path to a user-provided style guide file
+      thinkingLevel: 'off' // off|low|medium|high — global reasoning effort
     },
     // Visible attachment filetypes
     attachmentExtensions: [],
