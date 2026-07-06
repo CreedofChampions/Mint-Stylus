@@ -482,19 +482,27 @@ export default class AIProvider extends ProviderContract {
   }
 
   /**
-   * Resolve the base URL for a request. The base URL is derived AUTOMATICALLY
-   * from the provider (see PROVIDERS) so users never see or type an endpoint.
-   * Order of precedence: an explicit payload baseURL wins (internal use), then a
-   * non-empty configured `ai.baseURL` as an ADVANCED override (never surfaced in
-   * the UI; empty by default), then the provider's fixed canonical base URL.
+   * Resolve the base URL for a request. For every named provider the base URL is
+   * derived AUTOMATICALLY from the provider (see PROVIDERS) so users never see or
+   * type an endpoint. The ONE exception is the 'custom' provider, whose base URL
+   * the user types in the UI (stored in `ai.baseURL`).
+   *
+   * Order of precedence: an explicit payload baseURL wins (internal use); then —
+   * ONLY for the 'custom' provider — the non-empty configured `ai.baseURL` the
+   * user typed; then the provider's fixed canonical base URL from PROVIDERS. The
+   * configured `ai.baseURL` is deliberately NOT applied to named providers, so a
+   * URL left over from a previous 'custom' selection can never leak into (or
+   * silently redirect) a named provider like OpenRouter.
    */
   private _resolveBaseURL (provider: string, payloadBaseURL?: string): string {
     if (typeof payloadBaseURL === 'string' && payloadBaseURL.length > 0) {
       return payloadBaseURL
     }
-    const configured = this._readConfig<string>('ai.baseURL')
-    if (typeof configured === 'string' && configured.length > 0) {
-      return configured
+    if (provider === 'custom') {
+      const configured = this._readConfig<string>('ai.baseURL')
+      if (typeof configured === 'string' && configured.length > 0) {
+        return configured
+      }
     }
     return getProviderInfo(provider).baseURL
   }

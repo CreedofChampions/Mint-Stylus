@@ -87,6 +87,17 @@ export const PROVIDERS = {
     needsKey: false,
     defaultModel: 'llama3.1',
     keyUrl: ''
+  },
+  // The escape hatch: any OpenAI-compatible endpoint. This is the ONLY provider
+  // whose baseURL is not fixed here — the user types it in the UI (stored in
+  // `ai.baseURL`) and the main process resolves to it. No default model: the
+  // user brings their own model string. Kept LAST so it sorts last in dropdowns.
+  custom: {
+    label: 'Custom (OpenAI-compatible)',
+    baseURL: '',
+    needsKey: true,
+    defaultModel: '',
+    keyUrl: ''
   }
 } as const satisfies Record<string, AIProviderInfo>
 
