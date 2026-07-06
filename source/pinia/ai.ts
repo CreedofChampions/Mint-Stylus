@@ -23,6 +23,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { COMMANDS } from 'source/app/service-providers/ai/prompts'
 
 /**
  * A single chat message, mirroring the OpenAI chat-completions shape that every
@@ -349,10 +350,16 @@ export const useAIStore = defineStore('ai', () => {
     inFlight.value = true
     panelContent.value = { ...emptyPanelContent(), text: '' }
 
-    const messages: AIChatMessage[] = [
-      { role: 'system', content: `You are the "${name}" command of a markdown editor. Respond in markdown.` },
-      { role: 'user', content: input }
-    ]
+    // Use the real command preset (Shorten → 30 alternatives, Synonyms → 15,
+    // Alternatives → segmented, Challenge Idea → the 6-step debate). Fall back to
+    // a generic instruction only for an unknown command name.
+    const preset = (COMMANDS as Record<string, { build: (i: { selection?: string, word?: string, pageContext?: string }) => AIChatMessage[] }>)[name]
+    const messages: AIChatMessage[] = preset !== undefined
+      ? preset.build({ selection: input, word: input, pageContext })
+      : [
+          { role: 'system', content: `You are the "${name}" command of a markdown editor. Respond in markdown.` },
+          { role: 'user', content: input }
+        ]
 
     try {
       // Pass the delta sink INTO chatStream so it is subscribed before the
