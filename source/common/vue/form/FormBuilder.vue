@@ -134,6 +134,7 @@
 // https://css-tricks.com/creating-vue-js-component-instances-programmatically/
 
 import type { ThemeDescriptor } from './elements/ThemeSelector.vue'
+import type { Component } from 'vue'
 import FormFieldControl from './FormField.vue'
 import type { FileFilter } from 'electron'
 
@@ -178,6 +179,16 @@ interface FormButton {
   type: 'button'
   label: string
   onClick: () => void
+}
+
+interface CustomComponentField {
+  type: 'custom'
+  /**
+   * A Vue component rendered as-is. Used for bespoke controls that don't map onto
+   * a config-bound field (e.g. the AI provider + API-key setup). The component is
+   * responsible for its own state; it is not passed a model.
+   */
+  component: Component
 }
 
 interface TextField extends BasicInfo {
@@ -269,7 +280,7 @@ interface ThemeField extends BasicInfo {
 /**
  * Fields that can occur within the form field list
  */
-export type FormField = Separator|FormText|FormButton|TextField|NumberField|
+export type FormField = Separator|FormText|FormButton|CustomComponentField|TextField|NumberField|
 TimeField|ColorField|FileField|CheckboxField|RadioField|SelectField|ListField|
 TokenField|SliderField|ThemeField
 

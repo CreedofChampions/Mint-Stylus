@@ -44,6 +44,12 @@ export interface AIProviderInfo {
    * The default model to use for this provider when the user has not chosen one.
    */
   defaultModel: string
+  /**
+   * Where the user gets an API key for this provider (empty for key-less local
+   * providers). Shown as a "Get a key" link in the settings so users know
+   * exactly where to go.
+   */
+  keyUrl: string
 }
 
 /**
@@ -58,25 +64,29 @@ export const PROVIDERS = {
     label: 'OpenRouter',
     baseURL: 'https://openrouter.ai/api/v1',
     needsKey: true,
-    defaultModel: 'z-ai/glm-5.2'
+    defaultModel: 'z-ai/glm-5.2',
+    keyUrl: 'https://openrouter.ai/keys'
   },
   'ollama-cloud': {
     label: 'Ollama Cloud',
     baseURL: 'https://ollama.com/v1',
     needsKey: true,
-    defaultModel: 'glm-5.2'
+    defaultModel: 'glm-5.2',
+    keyUrl: 'https://ollama.com/settings/keys'
   },
   zai: {
     label: 'Z.ai (GLM)',
     baseURL: 'https://api.z.ai/api/paas/v4',
     needsKey: true,
-    defaultModel: 'glm-5.2'
+    defaultModel: 'glm-5.2',
+    keyUrl: 'https://z.ai/manage-apikey/apikey-list'
   },
   'ollama-local': {
     label: 'Ollama (local)',
     baseURL: 'http://localhost:11434/v1',
     needsKey: false,
-    defaultModel: 'llama3.1'
+    defaultModel: 'llama3.1',
+    keyUrl: ''
   }
 } as const satisfies Record<string, AIProviderInfo>
 
