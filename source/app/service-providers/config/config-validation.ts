@@ -39,7 +39,13 @@ const RULES = {
   cslLibrary: 'optional|string|default:',
   'display.imageWidth': 'required|number|min:1|max:100|default:100',
   'display.imageHeight': 'required|number|min:1|max:100|default:100',
-  'watchdog.stabilityThreshold': 'optional|number|min:1|max:100000|default:1000'
+  'watchdog.stabilityThreshold': 'optional|number|min:1|max:100000|default:1000',
+  // Mint Stylus AI configuration (added for the AI-native fork)
+  'ai.provider': 'required|string|in:openrouter,zai,ollama-cloud,ollama-local|default:openrouter',
+  'ai.baseURL': 'required|string|default:https://openrouter.ai/api/v1',
+  'ai.model': 'required|string|default:z-ai/glm-5.2',
+  'ai.searchProvider': 'required|string|in:tavily,brave,none|default:tavily',
+  'ai.styleFilePath': 'optional|string|default:'
 }
 
 export const VALIDATE_RULES = Object.values(RULES)

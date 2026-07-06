@@ -2,10 +2,10 @@
 # packages for our officially supported distributions.
 #
 # Formerly the "build" key in the package.json.
-appId: com.zettlr.app
-productName: Zettlr
+appId: app.mintstylus
+productName: Mint Stylus
 npmRebuild: false
-copyright: Zettlr is licensed under GNU GPL v3.
+copyright: Mint Stylus, a fork of Zettlr, licensed under GNU GPL v3.
 fileAssociations:
 - ext: md
   name: Markdown
@@ -34,7 +34,7 @@ mac:
   category: "public.app-category.productivity"
   target:
   - dmg
-  artifactName: "Zettlr-${version}-${arch}.${ext}"
+  artifactName: "MintStylus-${version}-${arch}.${ext}"
   icon: "./resources/icons/icon.icns"
   darkModeSupport: true
   hardenedRuntime: true
@@ -47,7 +47,7 @@ mac:
 win:
   target:
   - nsis
-  artifactName: "Zettlr-${version}-${arch}.${ext}"
+  artifactName: "MintStylus-${version}-${arch}.${ext}"
   icon: "./resources/icons/icon.ico"
   # New signing options for use with Azure Trusted Signing
   azureSignOptions:
@@ -61,14 +61,14 @@ win:
 linux:
   target:
   - AppImage
-  artifactName: "Zettlr-${version}-${arch}.${ext}"
-  executableName: Zettlr
+  artifactName: "MintStylus-${version}-${arch}.${ext}"
+  executableName: MintStylus
   synopsis: Markdown editor
   category: Office
   icon: "./resources/icons/png"
   desktop:
     entry:
-      StartupWMClass: zettlr
+      StartupWMClass: mintstylus
 #
 # Configuration for DMG builds
 #

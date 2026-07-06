@@ -14,6 +14,8 @@
  */
 
 // Providers
+// AI-created for Mint Stylus: registers the AIProvider (main-process only).
+import AIProvider from '@providers/ai'
 import AppearanceProvider from '@providers/appearance'
 import AssetsProvider from '@providers/assets'
 import CiteprocProvider from '@providers/citeproc'
@@ -73,6 +75,8 @@ export function setAppServiceContainer (container: AppServiceContainer) {
 }
 
 export class AppServiceContainer {
+  // AI-created for Mint Stylus: AIProvider instance (main-process only).
+  private readonly _aiProvider: AIProvider
   private readonly _appearanceProvider: AppearanceProvider
   private readonly _assetsProvider: AssetsProvider
   private readonly _citeprocProvider: CiteprocProvider
@@ -117,6 +121,8 @@ export class AppServiceContainer {
     this._dictionaryProvider = new DictionaryProvider(this._logProvider, this._configProvider)
 
     this._targetProvider = new TargetProvider(this._logProvider, this._fsal)
+    // AI-created for Mint Stylus: AIProvider only needs log + config.
+    this._aiProvider = new AIProvider(this._logProvider, this._configProvider)
     this._linkProvider = new LinkProvider(this._logProvider, this._configProvider, this._fsal)
     this._searchProvider = new SearchProvider(this._logProvider, this._fsal, this._configProvider)
     
@@ -181,6 +187,8 @@ export class AppServiceContainer {
     })
 
     await this._informativeBoot(this._targetProvider, 'TargetProvider')
+    // AI-created for Mint Stylus: boot the AIProvider after config/log are up.
+    await this._informativeBoot(this._aiProvider, 'AIProvider')
     await this._informativeBoot(this._linkProvider, 'LinkProvider')
     await this._informativeBoot(this._searchProvider, 'SearchProvider')
 
@@ -235,6 +243,8 @@ export class AppServiceContainer {
   public get stats (): StatsProvider { return this._statsProvider }
   public get tags (): TagProvider { return this._tagProvider }
   public get targets (): TargetProvider { return this._targetProvider }
+  // AI-created for Mint Stylus: getter for the AIProvider.
+  public get ai (): AIProvider { return this._aiProvider }
   public get tray (): TrayProvider { return this._trayProvider }
   public get updates (): UpdateProvider { return this._updateProvider }
   public get windows (): WindowProvider { return this._windowProvider }
@@ -258,6 +268,8 @@ export class AppServiceContainer {
     await this._safeShutdown(this._updateProvider, 'UpdateProvider')
     await this._safeShutdown(this._cssProvider, 'CSSProvider')
     await this._safeShutdown(this._targetProvider, 'TargetProvider')
+    // AI-created for Mint Stylus: shut down the AIProvider.
+    await this._safeShutdown(this._aiProvider, 'AIProvider')
     await this._safeShutdown(this._linkProvider, 'LinkProvider')
     await this._safeShutdown(this._tagProvider, 'TagProvider')
     await this._safeShutdown(this._searchProvider, 'SearchProvider')

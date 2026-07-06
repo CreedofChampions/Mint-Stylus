@@ -1,0 +1,209 @@
+/**
+ * @ignore
+ * BEGIN HEADER
+ *
+ * Contains:        AI Selection Menu
+ * CVM-Role:        Extension
+ * Maintainer:      Mint Stylus
+ * License:         GNU GPL v3
+ *
+ * Description:     AI-CREATED FOR MINT STYLUS.
+ *                  This CodeMirror 6 extension shows a small, non-blocking
+ *                  floating bubble ("Summarize | Command") above a non-empty
+ *                  selection. It is implemented as a tooltip (not a modal), so
+ *                  it never covers the rest of the document — the user can keep
+ *                  reading while it is visible. Clicking a button hands the
+ *                  selected text and its range to the injected handlers, which
+ *                  the renderer wires up to open the AI panel (via the Pinia AI
+ *                  store). No AI/HTTP call happens here: this file only surfaces
+ *                  the selection to the renderer; every model call and API key
+ *                  lives exclusively in the Electron main process (AIProvider).
+ *
+ * END HEADER
+ */
+
+import { EditorView, showTooltip, type Tooltip } from '@codemirror/view'
+import { StateField, type EditorState, type Extension } from '@codemirror/state'
+import { trans } from '@common/i18n-renderer'
+
+/**
+ * Describes the selection that the user acted upon. This is the payload handed
+ * to the handlers so the renderer can (a) show the AI panel and (b) later
+ * replace the exact range (e.g. the Summarize flow's 7 rewrite options).
+ */
+export interface AISelection {
+  /** Absolute document offset where the selection begins. */
+  from: number
+  /** Absolute document offset where the selection ends. */
+  to: number
+  /** The plain text contained within the selection. */
+  text: string
+}
+
+/**
+ * The set of callbacks the editor host must provide. The MarkdownEditor is
+ * created centrally, so the integrator injects these there (wiring them to the
+ * Pinia AI store actions that open the AI panel). Both receive the current
+ * selection; the buttons do nothing observable on their own.
+ */
+export interface AISelectionMenuHandlers {
+  /** Invoked when the user clicks "Summarize". */
+  onSummarize: (selection: AISelection) => void
+  /** Invoked when the user clicks "Command". */
+  onCommand: (selection: AISelection) => void
+}
+
+/**
+ * Reads the main selection out of the state and turns it into an AISelection.
+ * Returns undefined when the selection is empty (nothing to act upon).
+ *
+ * @param   {EditorState}           state  The current editor state
+ *
+ * @return  {AISelection|undefined}        The selection payload, or undefined
+ */
+function getSelection (state: EditorState): AISelection|undefined {
+  const mainSel = state.selection.main
+  if (mainSel.empty) {
+    return undefined
+  }
+
+  return {
+    from: mainSel.from,
+    to: mainSel.to,
+    text: state.sliceDoc(mainSel.from, mainSel.to)
+  }
+}
+
+/**
+ * Builds the (zero or one) tooltips describing the AI selection bubble. When
+ * the selection is non-empty, a single tooltip is anchored at the selection
+ * head and forced to render above the text so it does not obscure the lines the
+ * user is reading below.
+ *
+ * @param   {EditorState}              state     The current editor state
+ * @param   {AISelectionMenuHandlers}  handlers  The injected callbacks
+ *
+ * @return  {Tooltip[]}                          Zero or one tooltip
+ */
+function getAiSelectionTooltips (state: EditorState, handlers: AISelectionMenuHandlers): Tooltip[] {
+  const selection = getSelection(state)
+  if (selection === undefined) {
+    return []
+  }
+
+  const mainSel = state.selection.main
+
+  return [{
+    // Anchor the bubble at the selection's head so it tracks the caret end.
+    pos: mainSel.head,
+    // Render above the selection: this keeps the text below fully visible so
+    // the bubble never blocks reading (a tooltip, not a modal).
+    above: true,
+    strictSide: false,
+    arrow: true,
+    create: (_view) => {
+      const dom = document.createElement('div')
+      dom.className = 'cm-ai-selection-menu'
+
+      const buttonWrapper = document.createElement('div')
+      buttonWrapper.className = 'button-wrapper'
+
+      const summarize = document.createElement('button')
+      summarize.classList.add('ai-selection-menu-button')
+      summarize.setAttribute('title', trans('Summarize the selected text'))
+      summarize.textContent = trans('Summarize')
+
+      const command = document.createElement('button')
+      command.classList.add('ai-selection-menu-button')
+      command.setAttribute('title', trans('Run an AI command on the selected text'))
+      command.textContent = trans('Command')
+
+      buttonWrapper.append(summarize, command)
+      dom.append(buttonWrapper)
+
+      // NOTE: We use onmousedown (mirroring the formatting toolbar) rather than
+      // onclick. A click only fires on mouseup, by which point moving the mouse
+      // to the button may have altered the selection and re-rendered the
+      // tooltip. Handling mousedown and preventing default keeps the selection
+      // intact so the payload we hand off is the one the user actually saw.
+      summarize.onmousedown = function (event) {
+        event.preventDefault()
+        // Re-read the selection at click time so the payload is current even if
+        // the state changed since this tooltip DOM was created.
+        const current = getSelection(state)
+        if (current !== undefined) {
+          handlers.onSummarize(current)
+        }
+      }
+
+      command.onmousedown = function (event) {
+        event.preventDefault()
+        const current = getSelection(state)
+        if (current !== undefined) {
+          handlers.onCommand(current)
+        }
+      }
+
+      return { dom }
+    }
+  }]
+}
+
+/**
+ * A minimal base theme for the AI selection bubble. Kept intentionally sparse
+ * and class-driven so themes can restyle it; only structural rules live here.
+ */
+const aiSelectionMenuTheme = EditorView.baseTheme({
+  '.cm-tooltip.cm-ai-selection-menu': {
+    borderRadius: '8px',
+    maxWidth: 'initial',
+    overflow: 'hidden'
+  },
+  '.cm-tooltip.cm-ai-selection-menu .button-wrapper': {
+    display: 'flex'
+  },
+  '.cm-tooltip.cm-ai-selection-menu button.ai-selection-menu-button': {
+    border: 'none',
+    margin: '0',
+    backgroundColor: 'transparent',
+    borderRadius: '0',
+    lineHeight: '30px',
+    padding: '0 12px',
+    fontSize: '13px',
+    whiteSpace: 'nowrap',
+    cursor: 'pointer'
+  },
+  '.cm-tooltip.cm-ai-selection-menu button.ai-selection-menu-button + button.ai-selection-menu-button': {
+    borderLeft: '1px solid rgba(128, 128, 128, 0.35)'
+  }
+})
+
+/**
+ * Factory that returns the AI selection menu extension. The editor is created
+ * centrally, so the integrator calls this once with handlers wired to the
+ * renderer's Pinia AI store (open the AI panel with the selection). The
+ * returned extension bundles a StateField (which derives the tooltip list from
+ * the selection and provides it to showTooltip) plus the base theme.
+ *
+ * @param   {AISelectionMenuHandlers}  handlers  Callbacks for the two buttons
+ *
+ * @return  {Extension}                          The composed extension
+ */
+export function aiSelectionMenu (handlers: AISelectionMenuHandlers): Extension {
+  const aiSelectionMenuField = StateField.define<readonly Tooltip[]>({
+    create (state) {
+      return getAiSelectionTooltips(state, handlers)
+    },
+
+    update (tooltips, transaction) {
+      return getAiSelectionTooltips(transaction.state, handlers)
+    },
+
+    provide: f => showTooltip.computeN([f], state => state.field(f))
+  })
+
+  return [
+    aiSelectionMenuField,
+    aiSelectionMenuTheme
+  ]
+}
