@@ -1513,15 +1513,31 @@ function getToolbarButtonDisplay (configName: keyof ConfigOptions['displayToolba
 .ai-thinking-level select {
   height: 20px;
   font-size: 11px;
-  color: inherit;
-  background-color: rgba(0, 0, 0, 0.06);
-  border: none;
+  /* Opaque, theme-correct colours. Previously this used `color: inherit` +
+     a translucent background, which the native OS <option> popup composited
+     to white-on-white in the dark theme (the near-transparent background
+     rendered as solid white while the inherited text was also white). Both
+     the closed control and the option popup now get solid, contrasting
+     colours in each theme. */
+  color: var(--grey-7);
+  background-color: var(--grey-0);
+  border: 1px solid var(--grey-2);
   border-radius: 10px;
   padding: 0 4px;
   cursor: pointer;
 }
 
-body.dark .ai-thinking-level select {
-  background-color: rgba(255, 255, 255, 0.08);
+/* The native option popup takes these explicit opaque colours so it can never
+   fall back to a translucent (white-on-white) background. */
+.ai-thinking-level select option {
+  color: var(--grey-7);
+  background-color: var(--grey-0);
+}
+
+body.dark .ai-thinking-level select,
+body.dark .ai-thinking-level select option {
+  color: var(--grey-0);
+  background-color: var(--grey-6);
+  border-color: var(--grey-5);
 }
 </style>
