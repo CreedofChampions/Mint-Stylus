@@ -23,7 +23,11 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { COMMANDS } from 'source/app/service-providers/ai/prompts'
+import {
+  reconcileCommands,
+  type AICommandConfig,
+  type AICommandFlow
+} from 'source/app/service-providers/ai/ai-commands'
 
 /**
  * A single chat message, mirroring the OpenAI chat-completions shape that every
@@ -272,6 +276,15 @@ export const useAIStore = defineStore('ai', () => {
    */
   const pendingSelection = ref<AIPendingSelection|null>(null)
 
+  /**
+   * The user-editable AI command set, mirrored from the `ai.commands` config
+   * key (reconciled to a clean, non-empty list). Drives the command chooser and
+   * every named command run. Kept in sync with the config via reloadCommands(),
+   * which is called whenever the command panel is (re)opened so edits made in
+   * Preferences take effect without a restart.
+   */
+  const commands = ref<AICommandConfig[]>(reconcileCommands(readCommandsConfig()))
+
   // ---------------------------------------------------------------------------
   // GETTERS
   // ---------------------------------------------------------------------------
@@ -316,6 +329,33 @@ export const useAIStore = defineStore('ai', () => {
    */
   function setPendingSelection (selection: AIPendingSelection|null): void {
     pendingSelection.value = selection
+    // Entering command mode: refresh the command set so the chooser reflects any
+    // edits/additions made in Preferences since the last time it was shown.
+    reloadCommands()
+  }
+
+  /**
+   * Reads the raw `ai.commands` value from the config bridge. Isolated + guarded
+   * so the store still works in contexts without a config bridge (tests), where
+   * it falls back to the built-in defaults via reconcileCommands.
+   *
+   * @return  {unknown}  The raw stored value, or undefined if unavailable.
+   */
+  function readCommandsConfig (): unknown {
+    try {
+      return window.config?.get('ai.commands')
+    } catch (err) {
+      console.error('Could not read ai.commands from config', err)
+      return undefined
+    }
+  }
+
+  /**
+   * Re-reads and reconciles the command set from config. Cheap; safe to call on
+   * every command-mode entry so Preferences edits apply without a restart.
+   */
+  function reloadCommands (): void {
+    commands.value = reconcileCommands(readCommandsConfig())
   }
 
   /**
@@ -397,31 +437,52 @@ export const useAIStore = defineStore('ai', () => {
   }
 
   /**
-   * Runs a named AI command (e.g. Shorten Text, Synonyms, Challenge Idea) on
-   * the given input, optionally with the whole-page context. The result streams
-   * into `panelContent.text`.
+   * Runs a named AI command by its id (e.g. `SHORTEN`, `SUMMARIZE`, or a custom
+   * `custom-1`) on the given input, optionally with the whole-page context. The
+   * command's editable prompt and `flow` are read from the reconciled command
+   * set, so the behaviour follows whatever the user configured:
    *
-   * @param   {string}  name         The command preset name.
+   *  - `stream`    flow → the answer streams into `panelContent.text` (command mode).
+   *  - `summarize` flow → the answer is parsed into clickable options the user
+   *                       can apply over their selection (summarize mode).
+   *
+   * @param   {string}  id           The command id.
    * @param   {string}  input        The primary input (usually the selection).
    * @param   {string}  pageContext  Optional whole-document context.
    *
    * @return  {Promise<void>}
    */
-  async function runCommand (name: string, input: string, pageContext?: string): Promise<void> {
+  async function runCommand (id: string, input: string, pageContext?: string): Promise<void> {
+    // Pick up any edits made in Preferences without needing a restart.
+    reloadCommands()
+    const cmd = commands.value.find(command => command.id === id)
+    const prompt = cmd?.prompt ?? `You are the "${id}" command of a markdown editor. Respond in markdown.`
+    const flow: AICommandFlow = cmd?.flow ?? 'stream'
+
+    if (flow === 'summarize') {
+      await runCommandSummarizeFlow(prompt, input, pageContext)
+    } else {
+      await runCommandStreamFlow(id, prompt, input, pageContext)
+    }
+  }
+
+  /**
+   * Streams a command's markdown answer into `panelContent.text` (command mode).
+   *
+   * @param   {string}  id           The command id (for error logging only).
+   * @param   {string}  prompt       The command's system prompt.
+   * @param   {string}  input        The text to act upon.
+   * @param   {string}  pageContext  Optional whole-document context.
+   */
+  async function runCommandStreamFlow (id: string, prompt: string, input: string, pageContext?: string): Promise<void> {
     openPanel('command')
     inFlight.value = true
     panelContent.value = { ...emptyPanelContent(), text: '' }
 
-    // Use the real command preset (Shorten → 30 alternatives, Synonyms → 15,
-    // Alternatives → segmented, Challenge Idea → the 6-step debate). Fall back to
-    // a generic instruction only for an unknown command name.
-    const preset = (COMMANDS as Record<string, { build: (i: { selection?: string, word?: string, pageContext?: string }) => AIChatMessage[] }>)[name]
-    const messages: AIChatMessage[] = preset !== undefined
-      ? preset.build({ selection: input, word: input, pageContext })
-      : [
-          { role: 'system', content: `You are the "${name}" command of a markdown editor. Respond in markdown.` },
-          { role: 'user', content: input }
-        ]
+    const messages: AIChatMessage[] = [
+      { role: 'system', content: prompt },
+      { role: 'user', content: input }
+    ]
 
     try {
       // Pass the delta sink INTO chatStream so it is subscribed before the
@@ -435,8 +496,46 @@ export const useAIStore = defineStore('ai', () => {
         panelContent.value.text += delta
       })
     } catch (err: any) {
-      console.error(`AI command "${name}" failed`, err)
+      console.error(`AI command "${id}" failed`, err)
       panelContent.value.text = `Command failed: ${err?.message ?? String(err)}`
+    } finally {
+      inFlight.value = false
+    }
+  }
+
+  /**
+   * Runs a command in the summarize flow: a single (non-streaming) request whose
+   * answer is parsed into clickable options (summarize mode). Clicking an option
+   * replaces the pending selection, exactly like the dedicated Summarize action.
+   *
+   * @param   {string}  prompt       The command's system prompt.
+   * @param   {string}  input        The text to act upon.
+   * @param   {string}  pageContext  Optional whole-document context.
+   */
+  async function runCommandSummarizeFlow (prompt: string, input: string, pageContext?: string): Promise<void> {
+    openPanel('summarize')
+    inFlight.value = true
+
+    const messages: AIChatMessage[] = [
+      { role: 'system', content: prompt },
+      { role: 'user', content: input }
+    ]
+
+    try {
+      const response = await window.ai.chat({
+        provider: currentProvider.value || undefined,
+        model: currentModel.value || undefined,
+        messages,
+        pageContext
+      })
+      const options = parseSummarizeOptions(response)
+      panelContent.value = { ...emptyPanelContent(), options }
+    } catch (err: any) {
+      console.error('AI command (summarize flow) failed', err)
+      panelContent.value = {
+        ...emptyPanelContent(),
+        text: `Command failed: ${err?.message ?? String(err)}`
+      }
     } finally {
       inFlight.value = false
     }
@@ -544,12 +643,14 @@ export const useAIStore = defineStore('ai', () => {
     inFlight,
     recoverStack,
     pendingSelection,
+    commands,
     // Getters
     canRecover,
     // Actions
     openPanel,
     closePanel,
     setPendingSelection,
+    reloadCommands,
     runSummarize,
     pushSummarizeReplacement,
     recoverLast,

@@ -80,22 +80,26 @@
           </p>
           <div class="ai-command-chooser">
             <button
-              v-for="preset in commandPresets"
-              v-bind:key="preset.key"
+              v-for="cmd in commandList"
+              v-bind:key="cmd.id"
               type="button"
               class="ai-command-preset"
+              v-bind:title="commandTitle(cmd)"
               v-bind:disabled="aiStore.inFlight"
-              v-on:click="runPreset(preset.key)"
+              v-on:click="runPreset(cmd.id)"
             >
-              {{ preset.label }}
+              {{ cmd.name }}
             </button>
           </div>
+          <p class="ai-command-chooser-hint">
+            {{ trans('Edit these commands, change their prompts, or add your own in Preferences → AI.') }}
+          </p>
           <form class="ai-command-custom-form" v-on:submit.prevent="runCustom">
             <input
               v-model="customInstruction"
               type="text"
               class="ai-command-custom-input"
-              v-bind:placeholder="trans('Or tell the AI what to do with the selection…')"
+              v-bind:placeholder="trans('One-off custom command: type what to do with the selection…')"
               v-bind:disabled="aiStore.inFlight"
               autocomplete="off"
               spellcheck="true"
@@ -234,6 +238,7 @@ import { trans } from 'source/common/i18n-renderer'
 import { sanitizeHTML } from 'source/common/util/sanitize-html'
 import ButtonControl from 'source/common/vue/form/elements/ButtonControl.vue'
 import { useAIStore, type AIRecoverEntry, type AIChatMessage } from 'source/pinia/ai'
+import { type AICommandConfig } from 'source/app/service-providers/ai/ai-commands'
 
 const aiStore = useAIStore()
 
@@ -277,17 +282,25 @@ const reversedRecoverStack = computed<AIRecoverEntry[]>(() => aiStore.recoverSta
 // ---------------------------------------------------------------------------
 
 /**
- * The five command presets the chooser offers. The keys are the COMMANDS
- * preset names from source/app/service-providers/ai/prompts.ts, which the
- * store's runCommand resolves to the real prompt builders.
+ * The command set the chooser offers, mirrored from the store (which reconciles
+ * it from the `ai.commands` config on every command-mode entry). Renames,
+ * prompt edits, flow changes, and user-added commands all flow through here.
  */
-const commandPresets = [
-  { key: 'SHORTEN', label: trans('Shorten Text') },
-  { key: 'SUMMARIZE', label: trans('Summarize') },
-  { key: 'SYNONYMS', label: trans('Synonyms') },
-  { key: 'ALTERNATIVES', label: trans('Alternatives') },
-  { key: 'CHALLENGE_IDEA', label: trans('Challenge Idea') }
-]
+const commandList = computed<AICommandConfig[]>(() => aiStore.commands)
+
+/**
+ * A tooltip describing what a command does when hovered: its flow, so the user
+ * knows whether it produces clickable replacement options or a streamed answer.
+ *
+ * @param   {AICommandConfig}  cmd  The command.
+ *
+ * @return  {string}                The tooltip text.
+ */
+function commandTitle (cmd: AICommandConfig): string {
+  return cmd.flow === 'summarize'
+    ? trans('%s — produces options you can click to replace the selection', cmd.name)
+    : trans('%s — writes a full answer into the panel', cmd.name)
+}
 
 /**
  * Whether to render the command chooser: we are in command mode, nothing is in
@@ -693,6 +706,13 @@ body div#ai-panel {
         cursor: default;
       }
     }
+  }
+
+  p.ai-command-chooser-hint {
+    flex: 0 0 auto;
+    margin: 0 0 8px 0;
+    font-size: 11px;
+    color: rgb(131, 131, 131);
   }
 
   form.ai-command-custom-form {

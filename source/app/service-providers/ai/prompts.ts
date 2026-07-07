@@ -134,7 +134,7 @@ export function buildMessages (opts: BuildMessagesOptions): ChatMessage[] {
 // Default command system prompts
 // ---------------------------------------------------------------------------
 
-const SHORTEN_SYSTEM = [
+export const SHORTEN_SYSTEM = [
   'You are an expert editor who shortens prose while preserving its full meaning.',
   '',
   'Follow this exact procedure and show each stage as a Markdown section:',
@@ -149,7 +149,7 @@ const SHORTEN_SYSTEM = [
   MARKDOWN_INSTRUCTION
 ].join('\n')
 
-const SUMMARIZE_SYSTEM = [
+export const SUMMARIZE_SYSTEM = [
   'You rewrite the user\'s selected text into shorter, clearer alternatives.',
   '',
   'Produce EXACTLY 7 alternative rewrites of the provided text, and nothing else.',
@@ -158,7 +158,7 @@ const SUMMARIZE_SYSTEM = [
   MARKDOWN_INSTRUCTION
 ].join('\n')
 
-const SYNONYMS_SYSTEM = [
+export const SYNONYMS_SYSTEM = [
   'You are a thesaurus assistant.',
   '',
   'Given a single word, produce 15 variations (synonyms or near-synonyms) of that word.',
@@ -166,7 +166,7 @@ const SYNONYMS_SYSTEM = [
   MARKDOWN_INSTRUCTION
 ].join('\n')
 
-const ALTERNATIVES_SYSTEM = [
+export const ALTERNATIVES_SYSTEM = [
   'You are an expert editor who produces alternative phrasings of a passage.',
   '',
   'Follow this exact procedure and show each stage as a Markdown section:',
@@ -181,7 +181,7 @@ const ALTERNATIVES_SYSTEM = [
   MARKDOWN_INSTRUCTION
 ].join('\n')
 
-const CHALLENGE_IDEA_SYSTEM = [
+export const CHALLENGE_IDEA_SYSTEM = [
   'You are a rigorous, adversarial critical-thinking partner. You are given the WHOLE document as context and must stress-test the idea it presents.',
   '',
   'The idea may contain several distinct claims. Identify each numbered point in the idea and work through EVERY one of them in turn. For each numbered point, carry out the following steps and present them as clearly labelled Markdown sections:',

@@ -338,7 +338,7 @@ export function getMarkdownExtensions (options: CoreExtensionOptions): Extension
     urlHover,
     filePreview,
     citationTooltips,
-    // created by AI for Mint Stylus: inline `QQ … QQ` questions answered by the
+    // created by AI for Mint Stylus: inline `/q … q/` questions answered by the
     // AIProvider (main process) via the narrow `window.ai` bridge. The renderer
     // only ever sends the question text and receives markdown back — no key.
     qqInline(async (question: string): Promise<string> => {
