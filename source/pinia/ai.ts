@@ -456,7 +456,12 @@ export const useAIStore = defineStore('ai', () => {
     // Pick up any edits made in Preferences without needing a restart.
     reloadCommands()
     const cmd = commands.value.find(command => command.id === id)
-    const prompt = cmd?.prompt ?? `You are the "${id}" command of a markdown editor. Respond in markdown.`
+    // Fall back to a generic instruction when the command is unknown OR its
+    // prompt is still blank (a freshly-added command the user hasn't filled in),
+    // so a run never sends an empty system prompt.
+    const prompt = (cmd !== undefined && cmd.prompt.trim() !== '')
+      ? cmd.prompt
+      : `You are the "${id}" command of a markdown editor. Respond in markdown.`
     const flow: AICommandFlow = cmd?.flow ?? 'stream'
 
     if (flow === 'summarize') {
