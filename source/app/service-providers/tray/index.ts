@@ -47,7 +47,7 @@ export default class TrayProvider extends ProviderContract {
     super()
     this._tray = null
 
-    if (process.env.ZETTLR_IS_TRAY_SUPPORTED === '0') {
+    if (process.env.MINT_STYLUS_IS_TRAY_SUPPORTED === '0') {
       this._config.set('system.leaveAppRunning', false)
     }
 
@@ -67,7 +67,7 @@ export default class TrayProvider extends ProviderContract {
     this._logger.verbose('Tray provider booting up ...')
     let addToTray: boolean = this._config.get('system.leaveAppRunning')
     const shouldStartMinimized = getCLIArgument(LAUNCH_MINIMIZED) === true
-    const traySupported = process.env.ZETTLR_IS_TRAY_SUPPORTED === '1'
+    const traySupported = process.env.MINT_STYLUS_IS_TRAY_SUPPORTED === '1'
 
     if (shouldStartMinimized && !addToTray && traySupported) {
       this._logger.info('[Tray Provider] Detected the --launch-minimized flag. Will override the tray setting.')

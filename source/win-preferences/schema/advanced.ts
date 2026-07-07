@@ -88,8 +88,8 @@ export function getAdvancedFields (config: ConfigOptions): PreferencesFieldset[]
             ? trans('Show app in the notification area')
             : trans('Leave app running in the notification area'),
           model: 'system.leaveAppRunning',
-          disabled: process.env.ZETTLR_IS_TRAY_SUPPORTED === '0',
-          info: process.env.ZETTLR_TRAY_ERROR
+          disabled: process.env.MINT_STYLUS_IS_TRAY_SUPPORTED === '0',
+          info: process.env.MINT_STYLUS_TRAY_ERROR
         },
         { type: 'separator' },
         {

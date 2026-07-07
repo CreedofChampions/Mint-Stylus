@@ -107,7 +107,7 @@ const attachments = computed(() => workspaceStore.otherFiles)
 function handleDragStart (event: DragEvent, attachmentPath: string): void {
   // Indicate with custom data that this is a file from the sidebar
   const data = { type: 'other', path: attachmentPath }
-  event.dataTransfer?.setData('text/x-zettlr-file', JSON.stringify(data))
+  event.dataTransfer?.setData('text/x-mint-stylus-file', JSON.stringify(data))
 }
 
 function getIcon (ext: string): string {

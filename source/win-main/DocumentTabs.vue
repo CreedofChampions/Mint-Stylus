@@ -603,7 +603,7 @@ function handleDragStart (event: DragEvent, filePath: string): void {
   // any remaining parts with `...filePath` and re-join with DELIM to
   // account for the fact that Unixoid systems allow colons in paths.
   const data = [ props.windowId, props.leafId, filePath ].join(DELIM)
-  event.dataTransfer?.setData('zettlr/document-tab', data)
+  event.dataTransfer?.setData('mint-stylus/document-tab', data)
   documentTabDragOverOrigin.value = true
 }
 
@@ -835,7 +835,7 @@ function moveFile (itemPath: string, where: 'start'|'end') {
 function handleExternalDrop (event: DragEvent): void {
   documentTabDragOver.value = false
   const DELIM = (process.platform === 'win32') ? ';' : ':'
-  const documentTab = event.dataTransfer?.getData('zettlr/document-tab')
+  const documentTab = event.dataTransfer?.getData('mint-stylus/document-tab')
   if (documentTab === undefined) {
     return
   } else if (!documentTab.includes(DELIM)) {
@@ -881,7 +881,7 @@ function handleExternalDragover (event: DragEvent): void {
     return // The document tab is coming from this tabbar
   }
 
-  const hasDocumentTab = event.dataTransfer?.types.includes('zettlr/document-tab') ?? false
+  const hasDocumentTab = event.dataTransfer?.types.includes('mint-stylus/document-tab') ?? false
   if (hasDocumentTab) {
     documentTabDragOver.value = true
   } else {

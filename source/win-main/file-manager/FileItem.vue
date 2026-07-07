@@ -421,7 +421,7 @@ function beginDragging (event: DragEvent): void {
   // Tell the file manager component to lock the directory tree
   // (only necessary for thin mode)
   emit('begin-dragging')
-  event.dataTransfer.setData('text/x-zettlr-file', JSON.stringify({
+  event.dataTransfer.setData('text/x-mint-stylus-file', JSON.stringify({
     type: props.item.type, // Can be file, code, or directory
     path: props.item.path,
     id: props.item.type === 'file' ? props.item.id : '' // Convenience

@@ -205,7 +205,7 @@ onBeforeUnmount(() => {
 
 function handleDrop (event: DragEvent, where: 'editor'|'top'|'left'|'right'|'bottom'): boolean|undefined {
   const DELIM = (process.platform === 'win32') ? ';' : ':'
-  const documentTab = event.dataTransfer?.getData('zettlr/document-tab')
+  const documentTab = event.dataTransfer?.getData('mint-stylus/document-tab')
   if (documentTab?.includes(DELIM) === true) {
     documentTabDrag.value = false
     event.stopPropagation()
@@ -257,7 +257,7 @@ function handleDrop (event: DragEvent, where: 'editor'|'top'|'left'|'right'|'bot
 }
 
 function handleDragEnter (event: DragEvent, where: 'editor'|'top'|'left'|'right'|'bottom'): void {
-  const hasDocumentTab = event.dataTransfer?.types.includes('zettlr/document-tab') ?? false
+  const hasDocumentTab = event.dataTransfer?.types.includes('mint-stylus/document-tab') ?? false
   if (hasDocumentTab) {
     event.stopPropagation()
     documentTabDrag.value = true

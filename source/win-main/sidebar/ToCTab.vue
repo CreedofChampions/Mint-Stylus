@@ -165,7 +165,7 @@ function startDragging (event: DragEvent): void {
   }
   const fromLine = (event.currentTarget as HTMLElement).dataset.line
   if (fromLine !== undefined) {
-    event.dataTransfer?.setData('x-zettlr/toc-drag', fromLine)
+    event.dataTransfer?.setData('x-mint-stylus/toc-drag', fromLine)
   }
 }
 
@@ -188,7 +188,7 @@ function drop (event: DragEvent): void {
     return
   }
 
-  const fromLine = parseInt(event.dataTransfer.getData('x-zettlr/toc-drag'), 10)
+  const fromLine = parseInt(event.dataTransfer.getData('x-mint-stylus/toc-drag'), 10)
   const toLine = parseInt(container.dataset.line, 10)
   if (fromLine === toLine) {
     return
