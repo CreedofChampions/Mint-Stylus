@@ -14,12 +14,12 @@
 
 import replaceTags from '@common/util/replace-tags'
 import type { MDFileDescriptor } from '@dts/common/fsal'
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import { dialog } from 'electron'
 import { trans } from '@common/i18n-main'
 import type { AppServiceContainer } from 'source/app/app-service-container'
 
-export default class RenameTag extends ZettlrCommand {
+export default class RenameTag extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'rename-tag')
   }

@@ -14,13 +14,13 @@
  */
 
 import type { AppServiceContainer } from 'source/app/app-service-container'
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 
 export enum ProgrammaticallyOpenableWindows {
   AssetsWindow = 'assets-window'
 }
 
-export default class OpenAuxWindow extends ZettlrCommand {
+export default class OpenAuxWindow extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'open-aux-window')
   }

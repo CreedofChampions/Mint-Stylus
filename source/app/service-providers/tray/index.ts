@@ -119,7 +119,7 @@ export default class TrayProvider extends ProviderContract {
   }
 
   /**
-   * Adds the Zettlr tray to the system notification area.
+   * Adds the Mint Stylus tray to the system notification area.
    * @private
    * @memberof TrayProvider
    */
@@ -181,7 +181,7 @@ export default class TrayProvider extends ProviderContract {
   }
 
   /**
-   * Removes the Zettlr tray from the system notification area.
+   * Removes the Mint Stylus tray from the system notification area.
    * @private
    * @memberof TrayProvider
    */

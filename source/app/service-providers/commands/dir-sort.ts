@@ -13,10 +13,10 @@
  */
 
 import type { AppServiceContainer } from 'source/app/app-service-container'
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import type { SortMethod } from 'source/types/common/fsal'
 
-export default class DirSort extends ZettlrCommand {
+export default class DirSort extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'dir-sort')
   }

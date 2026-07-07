@@ -2,7 +2,7 @@
   <div id="sponsors-tab">
     <p>
       Mint Stylus is a fork of <a href="https://www.zettlr.com/">Zettlr</a>,
-      licensed under the GNU GPL v3. A special thanks goes out to the Zettlr
+      licensed under the GNU GPL v3. A special thanks goes out to the Mint Stylus
       project and its sponsors, whose work Mint Stylus is built upon.
     </p>
     <p>

@@ -35,7 +35,7 @@ import { getAppServiceContainer, isAppServiceContainerReady } from '../../../app
 
 // Here are all supported variables for Pandoc:
 // https://pandoc.org/MANUAL.html#variables
-// Below is a selection that Zettlr may use
+// Below is a selection that Mint Stylus may use
 const FRONTMATTER_VARS = [
   'title',
   'subtitle',
@@ -113,7 +113,7 @@ export default function getMarkdownFileParser (
       }
 
       for (const [ key, value ] of Object.entries(frontmatter as { [s: string]: unknown })) {
-        // Only keep those values which Zettlr can understand
+        // Only keep those values which Mint Stylus can understand
         if (FRONTMATTER_VARS.includes(key)) {
           file.frontmatter[key] = value
         }

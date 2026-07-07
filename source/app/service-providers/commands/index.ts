@@ -8,7 +8,7 @@
  * License:         GNU GPL v3
  *
  * Description:     This file simply imports all commands, and exports them in
- *                  a unified object for easy instantiation by zettlr.ts.
+ *                  a unified object for easy instantiation by the Mint Stylus app.
  *
  * END HEADER
  */
@@ -50,7 +50,7 @@ import UpdateProjectProperties from './update-project-properties'
 import UpdateUserDictionary from './update-user-dictionary'
 import ProviderContract from '@providers/provider-contract'
 import { type AppServiceContainer } from 'source/app/app-service-container'
-import type ZettlrCommand from './zettlr-command'
+import type AppCommand from './app-command'
 import { clipboard, ipcMain, nativeImage } from 'electron'
 import enumLangFiles from '@common/util/enum-lang-files'
 import enumDictFiles from '@common/util/enum-dict-files'
@@ -98,7 +98,7 @@ export const commands = [
 ]
 
 export default class CommandProvider extends ProviderContract {
-  private readonly _commands: ZettlrCommand[]
+  private readonly _commands: AppCommand[]
 
   // TODO: Right now this just injects the full service container into the
   // commands, but it mayt be better to only provide those which are actually
@@ -182,7 +182,7 @@ export default class CommandProvider extends ProviderContract {
     } else {
       // ELSE: If the command has not yet been found, try to run one of the
       // bigger commands
-      const cmd: ZettlrCommand|undefined = this._commands.find((elem: ZettlrCommand) => elem.respondsTo(command))
+      const cmd: AppCommand|undefined = this._commands.find((elem: AppCommand) => elem.respondsTo(command))
       if (cmd !== undefined) {
         // Return the return value of the command, if there is any
         try {

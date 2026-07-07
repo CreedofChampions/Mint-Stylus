@@ -40,7 +40,7 @@ const WATCHDOG_IGNORE_PATHS: string[] = [
 // be watched for changes. Will be converted
 // to a RegExp object
 const IGNORE_PATHS: string[] = [
-  '\\.ztr-directory', // Zettlr project settings
+  '\\.ztr-directory', // Mint Stylus project settings
   ...WATCHDOG_IGNORE_PATHS
 ]
 

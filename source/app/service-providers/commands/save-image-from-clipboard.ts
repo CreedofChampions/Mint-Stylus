@@ -12,7 +12,7 @@
  * END HEADER
  */
 
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import { trans } from '@common/i18n-main'
 import sanitize from 'sanitize-filename'
 import path from 'path'
@@ -35,7 +35,7 @@ export interface PasteModalResult {
   height: string
 }
 
-export default class SaveImage extends ZettlrCommand {
+export default class SaveImage extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'save-image-from-clipboard')
   }

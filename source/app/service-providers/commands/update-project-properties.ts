@@ -13,10 +13,10 @@
  */
 
 import type { ProjectSettings } from '@dts/common/fsal'
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import type { AppServiceContainer } from 'source/app/app-service-container'
 
-export default class UpdateProjectProperties extends ZettlrCommand {
+export default class UpdateProjectProperties extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'update-project-properties')
   }

@@ -53,7 +53,7 @@ function mapErrorCode (errorCode: string): string {
 export default function mapFSError (error: NodeError): { what: string, why: string } {
   // This function should display a very specific type of information: Why a
   // certain error occurred. The user is not interested in a callstack or trace
-  // but rather in "why didn't Zettlr open that Workspace/root file?"
+  // but rather in "why didn't Mint Stylus open that Workspace/root file?"
   // So they need the following information:
   // * What failed to load?
   // * Why did it fail to load?

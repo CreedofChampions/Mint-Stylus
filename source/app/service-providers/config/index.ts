@@ -60,10 +60,10 @@ const guardOptions = {
 }
 
 /**
- * This class represents the configuration of Zettlr, represented by the
+ * This class represents the configuration of Mint Stylus, represented by the
  * config.json file in the user's data directory as well as some environment
- * variables. Basically, this class tells Zettlr what the user wants and what
- * the environment Zettlr is running in is capable of.
+ * variables. Basically, this class tells Mint Stylus what the user wants and what
+ * the environment Mint Stylus is running in is capable of.
  */
 export default class ConfigProvider extends ProviderContract {
   /**
@@ -108,7 +108,7 @@ export default class ConfigProvider extends ProviderContract {
 
   /**
     * Preset sane defaults, then load the config and perform a system check.
-    * @param {Zettlr} parent Parent Zettlr object.
+    * @param {Mint Stylus} parent Parent Mint Stylus object.
     */
   constructor (private readonly _logger: LogProvider) {
     super()
@@ -367,7 +367,7 @@ export default class ConfigProvider extends ProviderContract {
 
   /**
     * Sorts the paths prior to using them alphabetically and by type.
-    * @return {ZettlrConfig} Chainability.
+    * @return {MintStylusConfig} Chainability.
     */
   private sortPaths (): void {
     const { openFiles, openWorkspaces } = this.config.app

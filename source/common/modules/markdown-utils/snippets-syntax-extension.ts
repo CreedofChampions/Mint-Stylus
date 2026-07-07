@@ -8,7 +8,7 @@
  * License:         GNU GPL v3
  *
  * Description:     This file exports an extension that can be used in CMv6
- *                  editors to highlight and autocomplete Zettlr's snippet
+ *                  editors to highlight and autocomplete Mint Stylus's snippet
  *                  variable syntax.
  *
  * END HEADER
@@ -41,7 +41,7 @@ const invalidVarDeco = Decoration.mark({ class: 'cm-tm-false-variable' })
 const varPlaceholderDeco = Decoration.mark({ class: 'cm-tm-variable-placeholder' })
 
 /**
- * Supported variables for Zettlr's snippets syntax
+ * Supported variables for Mint Stylus's snippets syntax
  *
  * @var {string[]}
  */

@@ -22,7 +22,7 @@ export const CLEAR_CACHE = 'clear-cache'
 export const LAUNCH_MINIMIZED = 'launch-minimized'
 
 /**
- * This function returns whether or not a predefined argument was passed to the zettlr executable.
+ * This function returns whether or not a predefined argument was passed to the Mint Stylus executable.
  * Possible keys:
  *    data-dir,
  *    disable-hardware-acceleration,
@@ -86,7 +86,7 @@ function showHelp (): void {
   console.log('    --clear-cache                     Clears the FSAL cache upon startup')
   console.log('    --disable-hardware-acceleration   Disables hardware acceleration')
   console.log('    --data-dir=FILEPATH               Use FILEPATH as the appData directory')
-  console.log('-m  --launch-minimized                Start Zettlr mimimized to the tray/menu bar')
+  console.log('-m  --launch-minimized                Start Mint Stylus mimimized to the tray/menu bar')
 }
 
 /**

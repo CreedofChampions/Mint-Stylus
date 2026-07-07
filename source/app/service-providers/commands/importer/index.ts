@@ -2,12 +2,12 @@
  * @ignore
  * BEGIN HEADER
  *
- * Contains:        ZettlrImport
+ * Contains:        MintStylusImport
  * CVM-Role:        Controller
  * Maintainer:      Hendrik Erz
  * License:         GNU GPL v3
  *
- * Description:     The importer module for Zettlr.
+ * Description:     The importer module for Mint Stylus.
  *
  * END HEADER
  */

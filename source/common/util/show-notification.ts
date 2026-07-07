@@ -16,7 +16,7 @@ import { Notification, nativeImage } from 'electron'
 import path from 'path'
 
 /**
- * The default icon: The Zettlr logo
+ * The default icon: The Mint Stylus logo
  */
 const defaultIcon = nativeImage.createFromPath(path.join(__dirname, '../img/image-preview.png'))
 
@@ -26,7 +26,7 @@ const defaultIcon = nativeImage.createFromPath(path.join(__dirname, '../img/imag
 * the function returns false.
 *
 * @param   {string}   message   The message (body) of the notification
-* @param   {string}   title     The (optional) title; default is "Zettlr"
+* @param   {string}   title     The (optional) title; default is "Mint Stylus"
 * @param   {void}     callback  Optional callback, invoked when user clicks the notification
 *
 * @return  {boolean}            False if the platform doesn't support notifications.

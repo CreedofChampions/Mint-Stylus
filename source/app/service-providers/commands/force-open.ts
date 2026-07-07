@@ -14,7 +14,7 @@
  */
 
 import type { AppServiceContainer } from 'source/app/app-service-container'
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 
 export interface ForceOpenAPI {
   windowId?: string
@@ -23,7 +23,7 @@ export interface ForceOpenAPI {
   newTab?: boolean
 }
 
-export default class ForceOpen extends ZettlrCommand {
+export default class ForceOpen extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, ['force-open'])
   }

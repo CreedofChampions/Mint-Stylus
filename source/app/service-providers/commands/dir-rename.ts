@@ -13,12 +13,12 @@
  */
 
 import path from 'path'
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import sanitize from 'sanitize-filename'
 import type { AppServiceContainer } from 'source/app/app-service-container'
 import { trans } from 'source/common/i18n-main'
 
-export default class DirRename extends ZettlrCommand {
+export default class DirRename extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'dir-rename')
   }

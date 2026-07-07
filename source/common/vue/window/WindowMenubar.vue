@@ -148,7 +148,7 @@ function showSubmenu (items: AnyMenuItem[], attachTo: string): void {
   font-family: inherit;
   font-size: 12px;
   padding-left: env(titlebar-area-height, var(--fallback-title-bar-height));
-  // Use the Zettlr logo as fixed background to enable branding in the menubar
+  // Use the Mint Stylus logo as fixed background to enable branding in the menubar
   background-image: url("../../img/image-preview.png");
   background-position: left center;
   background-repeat: no-repeat;

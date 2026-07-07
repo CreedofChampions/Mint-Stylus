@@ -13,10 +13,10 @@
  */
 
 import type { AppServiceContainer } from 'source/app/app-service-container'
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import type { SearchResult, SearchTerm } from 'source/types/common/search'
 
-export default class FileSearch extends ZettlrCommand {
+export default class FileSearch extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'file-search')
   }

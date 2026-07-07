@@ -233,7 +233,7 @@ class ImageWidget extends WidgetType {
         img.dataset.originalUrl ?? ''
       )
 
-      // Open in Zettlr if wanted. TODO: Maybe move this into the editor config?
+      // Open in Mint Stylus if wanted. TODO: Maybe move this into the editor config?
       if (window.config.get('files.images.openWith') === 'zettlr') {
         const unencoded = decodeURIComponent(url).substring(12)
         // On Windows, it likes to add a third slash at the beginning (because

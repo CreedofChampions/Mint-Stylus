@@ -13,7 +13,7 @@
  */
 
 import path from 'path'
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import sanitize from 'sanitize-filename'
 import { dialog } from 'electron'
 import { trans } from '@common/i18n-main'
@@ -22,7 +22,7 @@ import { hasAnyRecognizedFileExtension } from '@common/util/file-extention-check
 import type { AppServiceContainer } from 'source/app/app-service-container'
 import pathExists from 'source/common/util/path-exists'
 
-export default class FileRename extends ZettlrCommand {
+export default class FileRename extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'file-rename')
   }
@@ -48,7 +48,7 @@ export default class FileRename extends ZettlrCommand {
     let parsedNewPath = path.parse(newName)
 
     // If the old and new extensions do not match, we must check
-    // that the new extension is recognized by Zettlr, and if it
+    // that the new extension is recognized by Mint Stylus, and if it
     // is, confirm with the user to change the file extension. If
     // it is not, simply append the old extension.
     if (parsedOldPath.ext !== parsedNewPath.ext) {
@@ -72,7 +72,7 @@ export default class FileRename extends ZettlrCommand {
         if (response.response === 1) {
           newName = path.join(parsedNewPath.dir, parsedNewPath.name + parsedOldPath.ext)
         }
-      // The new extension was not recognized by Zettlr, so append the old extension
+      // The new extension was not recognized by Mint Stylus, so append the old extension
       } else {
         newName += parsedOldPath.ext
       }

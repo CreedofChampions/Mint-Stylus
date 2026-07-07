@@ -10,7 +10,7 @@
  * Description:     This is a simple cache class
  *                  that slows down the initial loading of files
  *                  a little bit, but then makes up for it by
- *                  speeding up the boot time of Zettlr between
+ *                  speeding up the boot time of Mint Stylus between
  *                  25 percent and over 90 percent by enabling us
  *                  to read in a small amount of cache files. Tests
  *                  with approx. 6.000 files have shown that roughly

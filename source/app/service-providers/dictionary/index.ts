@@ -58,7 +58,7 @@ export default class DictionaryProvider extends ProviderContract {
     // Path to the user dictionary
     this._userDictionaryPath = path.join(app.getPath('userData'), 'user.dic')
     // The user dictionary
-    this._userDictionary = ['Zettlr']
+    this._userDictionary = ['Mint', 'Stylus']
 
     this._cachedAutocorrect = []
 
@@ -411,7 +411,7 @@ export default class DictionaryProvider extends ProviderContract {
   }
 
   /**
-   * Does ZettlrDictionary check for the given language, i.e. did it load?
+   * Does MintStylusDictionary check for the given language, i.e. did it load?
    * @param  {string} lang The language code, e.g. en_GB
    * @return {Boolean}      True, if the dictionary has been loaded, or false.
    */

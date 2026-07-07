@@ -38,14 +38,14 @@ export interface PandocProfileMetadata {
    */
   reader: string
   /**
-   * Since Zettlr has a few requirements, we must have writers and readers.
+   * Since Mint Stylus has a few requirements, we must have writers and readers.
    * While we strive to even support unknown readers and writers, those fields
    * at least have to have a value. If any hasn't, isInvalid will be true.
    */
   isInvalid: boolean
   /**
-   * Zettlr ships with a few profiles by default. In order to ensure that there
-   * is always a set of minimal profiles to export and import to, Zettlr will
+   * Mint Stylus ships with a few profiles by default. In order to ensure that there
+   * is always a set of minimal profiles to export and import to, Mint Stylus will
    * ensure that these standard defaults files will always be present. With this
    * flag, renderer elements can additionally indicate that. This helps prevent
    * some misconceptions, i.e. why certain files cannot be deleted.
@@ -492,7 +492,7 @@ export default class AssetsProvider extends ProviderContract {
 
   /**
    * Restores the requested defaults file by copying it from the directory
-   * within Zettlr into the defaults path (user data).
+   * within Mint Stylus into the defaults path (user data).
    *
    * @param   {string}             filename  The defaults file to copy over
    *

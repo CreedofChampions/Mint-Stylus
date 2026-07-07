@@ -12,7 +12,7 @@
  * END HEADER
  */
 
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import { trans } from '@common/i18n-main'
 import makeImport from './importer'
 import path from 'path'
@@ -20,7 +20,7 @@ import { import_files as FORMATS } from '@common/data.json'
 import { showNativeNotification } from '@common/util/show-notification'
 import type { AppServiceContainer } from 'source/app/app-service-container'
 
-export default class ImportFiles extends ZettlrCommand {
+export default class ImportFiles extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'import-files')
   }

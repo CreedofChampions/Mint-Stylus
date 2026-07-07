@@ -7,10 +7,10 @@
  * Maintainer:      Hendrik Erz
  * License:         GNU GPL v3
  *
- * Description:     This file provides the backbone for Zettlr's file detection.
+ * Description:     This file provides the backbone for Mint Stylus's file detection.
  *                  It includes various functions to determine if paths or
  *                  filenames have proper file extensions as they can be handled
- *                  by Zettlr.
+ *                  by Mint Stylus.
  *
  * END HEADER
  */
@@ -140,7 +140,7 @@ export function hasDataExt (filePath: string): boolean {
 
 /**
  * Utility function that checks for *any* of the recognized file extensions
- * Zettlr supports to some degree.
+ * Mint Stylus supports to some degree.
  *
  * @param   {string}   filePath  The file path
  *

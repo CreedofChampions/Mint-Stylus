@@ -5,7 +5,7 @@
       <img src="../../resources/icons/png/128x128.png">
     </div>
     <div id="info">
-      <h1>Zettlr</h1>
+      <h1>Mint Stylus</h1>
       <p>Your One-Stop Publication Workbench</p>
       <p>&copy; 2017&ndash;{{ year }} Hendrik Erz</p>
     </div>

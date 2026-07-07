@@ -755,7 +755,7 @@ export default class FSAL extends ProviderContract {
 
   /**
    * This is a convenience function to retrieve the file contents (as a string)
-   * of any file that is supported by Zettlr, meaning you can use this function
+   * of any file that is supported by Mint Stylus, meaning you can use this function
    * to load the contents of any Markdown file, any JSON or YAML file, or any
    * TeX file (+ maybe others in the future).
    *
@@ -911,7 +911,7 @@ export default class FSAL extends ProviderContract {
    * file and folder within `absPath` and return it.
    *
    * NOTE: This function will already exclude dotfiles and ignored directories,
-   * so this function is safe to consume in terms of what Zettlr should display.
+   * so this function is safe to consume in terms of what Mint Stylus should display.
    *
    * @param   {string}             directoryPath  The absolute path to parse
    *

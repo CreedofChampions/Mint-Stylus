@@ -7,10 +7,10 @@
  * Maintainer:      Hendrik Erz
  * License:         GNU GPL v3
  *
- * Description:     This is the default Zettlr keymap that is valid for every
+ * Description:     This is the default Mint Stylus keymap that is valid for every
  *                  CodeMirror editor. It combines a series of factory keymaps
  *                  that ship with CodeMirror in addition to custom commands
- *                  that Zettlr defines.
+ *                  that Mint Stylus defines.
  *
  * END HEADER
  */
@@ -139,7 +139,7 @@ export function defaultKeymap (): Extension {
 
     // Now follows the original sharedKeymap to make the defaults available, but
     // with a lower priority, so that we can override anything in this keymap.
-    // Custom key bindings for Zettlr
+    // Custom key bindings for Mint Stylus
     { key: 'Tab', run: indentMore, shift: indentLess },
 
     // historyKeymap, but with our own keyboard shortcuts

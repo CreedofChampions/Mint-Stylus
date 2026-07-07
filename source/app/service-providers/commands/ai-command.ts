@@ -24,7 +24,7 @@
  * END HEADER
  */
 
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import type { AppServiceContainer } from 'source/app/app-service-container'
 
 /**
@@ -49,7 +49,7 @@ export interface AICommandIPCPayload {
   command: AICommandName
 }
 
-export default class AICommand extends ZettlrCommand {
+export default class AICommand extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'ai-command')
   }

@@ -12,14 +12,14 @@
  * END HEADER
  */
 
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import { trans } from '@common/i18n-main'
 import path from 'path'
 import sanitize from 'sanitize-filename'
 import { hasCodeExt, hasMarkdownExt } from '@common/util/file-extention-checks'
 import type { AppServiceContainer } from 'source/app/app-service-container'
 
-export default class FileDuplicate extends ZettlrCommand {
+export default class FileDuplicate extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'file-duplicate')
   }

@@ -12,12 +12,12 @@
  * END HEADER
  */
 
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import { trans } from '@common/i18n-main'
 import path from 'path'
 import type { AppServiceContainer } from 'source/app/app-service-container'
 
-export default class RequestMove extends ZettlrCommand {
+export default class RequestMove extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'request-move')
   }

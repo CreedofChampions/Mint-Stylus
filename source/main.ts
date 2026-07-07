@@ -30,18 +30,18 @@ import { getAppServiceContainer, isAppServiceContainerReady } from './app/app-se
 handleExitArguments()
 
 // Immediately after launch, check if there is already another instance of
-// Zettlr running, and, if so, exit immediately. The arguments (including files)
+// Mint Stylus running, and, if so, exit immediately. The arguments (including files)
 // from this instance will already be passed to the first instance.
 if (!app.requestSingleInstanceLock()) {
   if (!app.isPackaged) {
     // I always forget to close my system install before starting the
     // development app, so let's just add a small reminder to myself.
-    console.log('There is another instance of Zettlr running. Did you forget to close that one?')
+    console.log('There is another instance of Mint Stylus running. Did you forget to close that one?')
   }
   app.exit(0)
 }
 
-// If we reach this point, we are now booting the first instance of Zettlr.
+// If we reach this point, we are now booting the first instance of Mint Stylus.
 
 // To show notifications properly on Windows, we must manually set the appUserModelID
 // See https://www.electronjs.org/docs/tutorial/notifications#windows
@@ -116,7 +116,7 @@ app.whenReady().then(() => {
     iconPath: process.execPath
   })
   // Immediately boot the application. This function performs some initial
-  // checks to make sure the environment is as expected for Zettlr, and boots
+  // checks to make sure the environment is as expected for Mint Stylus, and boots
   // up the providers.
   bootApplication().then(() => {
     getAppServiceContainer().commands.run('roots-add', filesBeforeOpen.concat(extractFilesFromArgv(process.argv)))
@@ -128,7 +128,7 @@ app.whenReady().then(() => {
 }).catch(e => console.error(e))
 
 /**
- * This event will be called if another instance of Zettlr has been opened with
+ * This event will be called if another instance of Mint Stylus has been opened with
  * the argv of that instance.
  * NOTE from the electron docs: This event is guaranteed to be emitted after
  * the ready event of app gets emitted.
@@ -171,7 +171,7 @@ app.on('open-file', (e, filePath) => {
         serviceContainer.log.error('[Application] Error while adding new roots', err)
       })
   } else {
-    // The Zettlr object has yet to be created -> cache it
+    // The Mint Stylus object has yet to be created -> cache it
     filesBeforeOpen.push(filePath)
   }
 })

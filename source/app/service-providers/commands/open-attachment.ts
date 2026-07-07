@@ -16,7 +16,7 @@
  * END HEADER
  */
 
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import { trans } from '@common/i18n-main'
 import ky from 'ky'
 import { shell } from 'electron'
@@ -51,7 +51,7 @@ function getBibliographyForDescriptor (descriptor: MDFileDescriptor): string {
   }
 }
 
-export default class OpenAttachment extends ZettlrCommand {
+export default class OpenAttachment extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'open-attachment')
   }
@@ -103,7 +103,7 @@ export default class OpenAttachment extends ZettlrCommand {
           method: 'item.attachments',
           // NOTE: The second parameter means that we wish to search across all
           // libraries (not just the user library, but all groups, too). This
-          // allows Zettlr to retrieve items that have been exported from a
+          // allows Mint Stylus to retrieve items that have been exported from a
           // group library, too.
           // See BBT docs: https://retorque.re/zotero-better-bibtex/exporting/json-rpc/index.html
           // See issue #5647

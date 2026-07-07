@@ -2,7 +2,7 @@
  * @ignore
  * BEGIN HEADER
  *
- * Contains:        ZettlrCommand class
+ * Contains:        AppCommand class
  * CVM-Role:        Controller
  * Maintainer:      Hendrik Erz
  * License:         GNU GPL v3
@@ -17,7 +17,7 @@
 
 import { type AppServiceContainer } from '../../app-service-container'
 
-export default abstract class ZettlrCommand {
+export default abstract class AppCommand {
   protected readonly _app: AppServiceContainer
   protected readonly _bind: string[]
 

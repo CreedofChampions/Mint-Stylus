@@ -37,7 +37,7 @@ async function lintPOfiles () {
 
     // Ensure that the language files follow the correct naming specification.
     // That is: Only latin letters, digits, and hyphens. Some standards use
-    // underscores, but Zettlr usually assumes hyphens.
+    // underscores, but Mint Stylus usually assumes hyphens.
     if (!/^[a-zA-Z0-9-]+\.po$/.test(file)) {
       error(`File "${file}" does not follow BCP 47 naming scheme ("xx-XX.po").`)
       failedFiles++

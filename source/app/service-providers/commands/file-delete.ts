@@ -14,11 +14,11 @@
 
 import { trans } from '@common/i18n-main'
 import { type MessageBoxOptions, dialog } from 'electron'
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import path from 'path'
 import type { AppServiceContainer } from 'source/app/app-service-container'
 
-export default class FileDelete extends ZettlrCommand {
+export default class FileDelete extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'file-delete')
   }

@@ -12,7 +12,7 @@
  * END HEADER
  */
 
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import { trans } from '@common/i18n-main'
 import path from 'path'
 import sanitize from 'sanitize-filename'
@@ -22,7 +22,7 @@ import { getDocumentTypeForExtension, getExtensionForDocumentType, hasAnyRecogni
 import type { AppServiceContainer } from 'source/app/app-service-container'
 import { DocumentType } from '@dts/common/documents'
 
-export default class FileNew extends ZettlrCommand {
+export default class FileNew extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, ['file-new'])
   }
@@ -164,7 +164,7 @@ export default class FileNew extends ZettlrCommand {
       await this._app.documents.openFile(windowId, leafId, absPath, true)
       // Final check: If the file has been created outside of any loaded
       // workspace, we must add it as root so that some other functions of
-      // Zettlr work fine (even though the editing should work flawlessly.).
+      // Mint Stylus work fine (even though the editing should work flawlessly.).
       // Since at this point the events that add the file to the tree likely
       // haven't fired yet, we can check whether the parent directory exists.
       if ((await this._app.fsal.getAnyDirectoryDescriptor(path.dirname(absPath))) === undefined) {

@@ -9,7 +9,7 @@
  *
  * Description:     This module contains the functionality to spin up a fully
  *                  functioning CodeMirror editor containing all the additional
- *                  API calls and hooks that Zettlr makes use of for its
+ *                  API calls and hooks that Mint Stylus makes use of for its
  *                  powerful internal editor. The class's API provides a
  *                  multitude of options to tweak the editor to the specific
  *                  needs of different environments.

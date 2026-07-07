@@ -15,7 +15,7 @@
 
 /**
  * This is a generic type that takes a map of command->payload and transforms it
- * into the `{ command: string, payload: any }` object structure that Zettlr
+ * into the `{ command: string, payload: any }` object structure that Mint Stylus
  * uses across the application. This describes commands to be send from the
  * renderer towards the main processes' service providers.
  * 

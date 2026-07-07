@@ -7,7 +7,7 @@
  * Maintainer:      Hendrik Erz
  * License:         GNU GPL v3
  *
- * Description:     This extension renders iframe elements, respecting Zettlr's
+ * Description:     This extension renders iframe elements, respecting Mint Stylus's
  *                  internal whitelist of allowed hostnames.
  *
  * END HEADER

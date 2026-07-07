@@ -36,7 +36,7 @@ export type CSL_LOCATOR_TERM = 'article-locator' | 'book' | 'canon' | 'chapter'
  * that users can use in various languages are the strings in the corresponding
  * arrays. As of now, only the French, German, and English locator labels have
  * been added to these lists of labels, since these are the three largest
- * communities of Zettlr. Going forward, adding more languages is straight-
+ * communities of Mint Stylus. Going forward, adding more languages is straight-
  * forward; it just requires some time. But note that citeproc will
  * automatically use the correct language; i.e., using the label "pp." to denote
  * pages will correctly render "S." if using the German language for the output.

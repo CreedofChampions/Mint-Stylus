@@ -7,7 +7,7 @@
  * Maintainer:      Hendrik Erz
  * License:         GNU GPL v3
  *
- * Description:     Zettlr editor themes.
+ * Description:     Mint Stylus editor themes.
  *
  * END HEADER
  */

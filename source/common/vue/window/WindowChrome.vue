@@ -6,7 +6,7 @@
         These different window chrome parts can be displayed conditionally, in
         order to facilitate different kinds of windows (a preferences window,
         for instance, does seldomly have a menubar, but almost all windows have
-        titlebars, except Zettlr's main window which instead has either a
+        titlebars, except Mint Stylus's main window which instead has either a
         menubar or a toolbar as its first element).
       -->
       <WindowTitlebar
@@ -124,7 +124,7 @@ const emit = defineEmits<{
 // the correct platform. In production, this will ensure "linux" styles are
 // shown on Linux, "darwin" styles are shown on macOS and "win32" styles are
 // shown on Windows. Change the value in the Vue dev tools if you want to see
-// how Zettlr looks on other platforms. Please also note that this does not
+// how Mint Stylus looks on other platforms. Please also note that this does not
 // affect the native window chrome.
 const platform = ref<typeof process.platform>(process.platform)
 // const platform = ref<typeof process.platform>('win32')
@@ -265,7 +265,7 @@ function handleDoubleClick (origin: 'titlebar'|'toolbar'): void {
 body {
   font-family: system-ui, sans-serif;
   // macOS OPERATING SYSTEM STYLES
-  // NOTE: On macOS, Zettlr uses vibrancy which means we must make the
+  // NOTE: On macOS, Mint Stylus uses vibrancy which means we must make the
   // background-color of all elements transparent which should have this
   // vibrancy effect. However, since this is the overall window background, we
   // also need a way to disable the vibrancy selectively (e.g. for the

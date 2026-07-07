@@ -45,7 +45,7 @@ export type CiteprocProviderIPCAPI = IPCAPI<{
   'get-bibliography': { database: string, citations: string[] }
 }>
 
-// The default style Zettlr ships with
+// The default style Mint Stylus ships with
 const DEFAULT_CHICAGO_STYLE = path.join(__dirname, './assets/csl-styles/chicago-author-date.csl')
 
 /**

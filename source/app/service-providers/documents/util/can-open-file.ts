@@ -2,7 +2,7 @@ import { hasMdOrCodeExt } from '@common/util/file-extention-checks'
 import { promises as fs, constants as FSConstants } from 'fs'
 
 /**
- * Checks if the given absolute path represents a file supported by Zettlr
+ * Checks if the given absolute path represents a file supported by Mint Stylus
  * (YAML, Markdown, JSON, etc.) and if the process has the correct access rights
  * to it.
  *

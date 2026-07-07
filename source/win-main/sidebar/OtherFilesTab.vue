@@ -122,7 +122,7 @@ function getIcon (ext: string): string {
 
 function handleClick (filePath: string) {
   if (hasImageExt(filePath) && configStore.config.files.images.openWith === 'zettlr') {
-    // Open this image in Zettlr
+    // Open this image in Mint Stylus
     ipcRenderer.invoke('documents-provider', {
       command: 'open-file',
       // We leave leafId undefined
@@ -138,7 +138,7 @@ function handleClick (filePath: string) {
 }
 
 /**
- * Returns true for any attachments that Zettlr can show a preview for
+ * Returns true for any attachments that Mint Stylus can show a preview for
  *
  * @param   {string}   attachmentPath  The absolute path to the attachment
  *

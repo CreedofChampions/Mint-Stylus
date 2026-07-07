@@ -16,13 +16,13 @@ import { trans } from '@common/i18n-main'
 import { ignorePath } from '@common/util/ignore-path'
 import { app } from 'electron'
 import path from 'path'
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import { type DirDescriptor } from '@dts/common/fsal'
 import { CODE_EXT, MD_EXT } from '@common/util/file-extention-checks'
 import type { AppServiceContainer } from 'source/app/app-service-container'
 import type { NodeError } from '../windows/map-fs-error'
 
-export default class RootOpen extends ZettlrCommand {
+export default class RootOpen extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, [ 'root-open-files', 'root-open-workspaces', 'roots-add' ])
   }
@@ -128,7 +128,7 @@ export default class RootOpen extends ZettlrCommand {
       if (isFile && (newFile = await this._app.fsal.getDescriptorForAnySupportedFile(absPath)) !== undefined) {
         // Open the file immediately
         await this._app.documents.openFile(winKey, leafId, newFile.path, true)
-        // Also set the newDir variable so that Zettlr will automatically
+        // Also set the newDir variable so that Mint Stylus will automatically
         // navigate to the directory. The directory of the latest file will
         // remain open afterwards.
         newDir = await this._app.fsal.getAnyDirectoryDescriptor(newFile.dir)

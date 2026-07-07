@@ -28,7 +28,7 @@
 import path from 'path'
 import { promises as fs } from 'fs'
 import { app } from 'electron'
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import type { AppServiceContainer } from 'source/app/app-service-container'
 
 /**
@@ -37,7 +37,7 @@ import type { AppServiceContainer } from 'source/app/app-service-container'
  */
 const STYLE_FILE = 'mint-style.md'
 
-export default class OpenAIStyle extends ZettlrCommand {
+export default class OpenAIStyle extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'open-ai-style')
   }

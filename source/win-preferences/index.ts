@@ -23,7 +23,7 @@
  *                    more and more applications customize their appearance, the
  *                    preferences window is something where most Electron apps
  *                    still follow the lazy way of displaying them inside the
- *                    main window. In order to make Zettlr much more consistent
+ *                    main window. In order to make Mint Stylus much more consistent
  *                    with native applications (and maybe to silence some
  *                    critics?) we have opted to displaying these windows in
  *                    their own browser window instance. Yes, this might be

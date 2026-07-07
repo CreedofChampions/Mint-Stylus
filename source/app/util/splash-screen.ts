@@ -32,7 +32,7 @@ let initSplashScreenPercent = 0
 let debounceTimeout: NodeJS.Timeout|undefined
 
 /**
- * Shows a splash screen for Zettlr. NOTE: Remember to call `closeSplashScreen`
+ * Shows a splash screen for Mint Stylus. NOTE: Remember to call `closeSplashScreen`
  * once your startup procedure is done!
  *
  * @param   {LogProvider}  logger  The logger for potential error messages.

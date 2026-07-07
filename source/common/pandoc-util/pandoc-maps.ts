@@ -188,7 +188,7 @@ export const WRITER2EXT: Record<string, string> = {
 }
 
 /**
- * This map maps extensions that one can import into Zettlr to the corresponding
+ * This map maps extensions that one can import into Mint Stylus to the corresponding
  * writers. Each extension can be supported by more than one reader.
  *
  * @var {Record<string, string[]>}

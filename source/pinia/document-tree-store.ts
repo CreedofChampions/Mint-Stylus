@@ -75,7 +75,7 @@ function extractLeafs (tree: DocumentTree): LeafNodeJSON[] {
  * full state, which may lead to visible flickering. However, because we store
  * all document content in the main process, this will not lead to data loss.
  *
- * @param   {ZettlrState}   state     The store state
+ * @param   {MintStylusState}   state     The store state
  * @param   {DocumentTree}  treedata  The new treedata to apply
  */
 function recoverState (paneStructure: Ref<BranchNodeJSON|LeafNodeJSON|undefined>, paneData: Ref<LeafNodeJSON[]>, lastLeafId: Ref<string|undefined>, treedata: DocumentTree): void {
@@ -100,7 +100,7 @@ function recoverState (paneStructure: Ref<BranchNodeJSON|LeafNodeJSON|undefined>
 /**
  * Applies a delta for just a single leaf node.
  *
- * @param   {ZettlrState}   state     The store state
+ * @param   {MintStylusState}   state     The store state
  * @param   {DocumentTree}  treedata  The new tree data
  * @param   {string}        leafId    The leaf in question
  */

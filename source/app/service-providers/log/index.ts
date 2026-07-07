@@ -231,7 +231,7 @@ export default class LogProvider extends ProviderContract {
 
   /**
    * Returns the current log file name (dynamically
-   * generated when Zettlr runs overnight).
+   * generated when Mint Stylus runs overnight).
    */
   _getLogfileName (): string {
     let date = new Date()
