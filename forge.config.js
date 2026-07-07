@@ -85,8 +85,8 @@ function generateRendererEntrypoint (name, folder) {
 module.exports = {
   hooks: {
     preStart: async (forgeConfig) => {
-      if (process.env.ZETTLR_DISABLE_UPDATE_CHECK !== undefined) {
-        console.warn('Detected the environment variable ZETTLR_DISABLE_UPDATE_CHECK. This build of Zettlr WILL NOT HAVE UPDATES ENABLED. Please ensure this was intended!')
+      if (process.env.MINT_STYLUS_DISABLE_UPDATE_CHECK !== undefined) {
+        console.warn('Detected the environment variable MINT_STYLUS_DISABLE_UPDATE_CHECK. This build of Mint Stylus WILL NOT HAVE UPDATES ENABLED. Please ensure this was intended!')
       }
     },
     generateAssets: async (forgeConfig, targetPlatform, targetArch) => {

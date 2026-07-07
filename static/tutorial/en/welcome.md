@@ -1,16 +1,16 @@
 ---
-title: "Welcome to Zettlr!"
+title: "Welcome to Mint Stylus!"
 keywords:
   - Guide
   - Tutorial
   - Introduction
 ...
 
-# Welcome to Zettlr!
+# Welcome to Mint Stylus!
 
  ![zettlr.png](./zettlr.png)
 
-Hello there, and thank you for choosing Zettlr! 🎉 We’ve compiled this little interactive tutorial to Zettlr so that you can dive right into using the app without having to skim through all of the docs. However, Zettlr is capable of much more than outlined in this short introduction, so we strongly recommend you also have a look at [🔗 the extensive documentation](https://docs.zettlr.com/) (hold down `Cmd` or `Ctrl` to open the link). The documentation is available in many different languages and helps you navigate through the extensive feature set. You can always open the online documentation by pressing `F1` or selecting the corresponding menu item in the Help-menu.
+Hello there, and thank you for choosing Mint Stylus! 🎉 We’ve compiled this little interactive tutorial to Mint Stylus so that you can dive right into using the app without having to skim through all of the docs. However, Mint Stylus is capable of much more than outlined in this short introduction, so we strongly recommend you also have a look at [🔗 the extensive documentation](https://docs.zettlr.com/) (hold down `Cmd` or `Ctrl` to open the link). The documentation is available in many different languages and helps you navigate through the extensive feature set. You can always open the online documentation by pressing `F1` or selecting the corresponding menu item in the Help-menu.
 
 But, now: Let’s go!
 
@@ -18,23 +18,23 @@ But, now: Let’s go!
 
 ## About this tutorial 🎬
 
-Several Markdown applications make use of such an interactive tutorial for a hands-on guide to using the application. In the case of Zettlr, we have created a small directory in your documents folder, named “Zettlr Tutorial” and loaded it for you. Right now, you see the contents of that directory in the left sidebar (called the “file manager”), so let us have a look!
+Several Markdown applications make use of such an interactive tutorial for a hands-on guide to using the application. In the case of Mint Stylus, we have created a small directory in your documents folder, named “Mint Stylus Tutorial” and loaded it for you. Right now, you see the contents of that directory in the left sidebar (called the “file manager”), so let us have a look!
 
-As you can see, there is a heading called “Workspaces”, and below that is the tutorial folder – Zettlr Tutorial – with the current file highlighted. You can also see other files, for example “references.json”, which will become important in just a moment. This default mode of the file manager is called “combined”, because it shows your files and folders interleaved as you already know it from the file browser of your system. Zettlr's file manager has two other modes, “thin” and expanded, that separate your files from your folders. You can activate those in the settings.
+As you can see, there is a heading called “Workspaces”, and below that is the tutorial folder – Mint Stylus Tutorial – with the current file highlighted. You can also see other files, for example “references.json”, which will become important in just a moment. This default mode of the file manager is called “combined”, because it shows your files and folders interleaved as you already know it from the file browser of your system. Mint Stylus's file manager has two other modes, “thin” and expanded, that separate your files from your folders. You can activate those in the settings.
 
-The folder “Zettlr Tutorial” is called a “Workspace” and it contains all files that are currently loaded in the app. You can open more workspaces and even standalone files (that aren't part of any workspace), and those will then show up in the file manager as well.
+The folder “Mint Stylus Tutorial” is called a “Workspace” and it contains all files that are currently loaded in the app. You can open more workspaces and even standalone files (that aren't part of any workspace), and those will then show up in the file manager as well.
 
-You can right-click the directory, and either “close” or “delete” it. When you _close_ a workspace or top-level (a.k.a. standalone) file in Zettlr, this means that you unload it from the application, but it will remain on your computer. If you _delete_ it, this means that Zettlr will move it into the trash bin. But don’t do that right now, as there are still new things to learn! ✍🏼
+You can right-click the directory, and either “close” or “delete” it. When you _close_ a workspace or top-level (a.k.a. standalone) file in Mint Stylus, this means that you unload it from the application, but it will remain on your computer. If you _delete_ it, this means that Mint Stylus will move it into the trash bin. But don’t do that right now, as there are still new things to learn! ✍🏼
 
-> Note: On some Linux distributions, moving files into the trash may not work out of the box, as Zettlr depends upon a certain package for moving files into the trash. If you experience problems removing files and folders, please [check our FAQ section](https://docs.zettlr.com/en/reference/faq/), which has got you covered!
+> Note: On some Linux distributions, moving files into the trash may not work out of the box, as Mint Stylus depends upon a certain package for moving files into the trash. If you experience problems removing files and folders, please [check our FAQ section](https://docs.zettlr.com/en/reference/faq/), which has got you covered!
 
-Zettlr is built around the concept of workspaces. So you will have the best experience having open at least one workspace directory at all times, and do all your work in that. The workspaces are loaded automatically everytime you open the app, and are always displayed in the directory tree that’s visible right now.
+Mint Stylus is built around the concept of workspaces. So you will have the best experience having open at least one workspace directory at all times, and do all your work in that. The workspaces are loaded automatically everytime you open the app, and are always displayed in the directory tree that’s visible right now.
 
 If you already have a folder in which you want to store your actual notes, or if you already have some notes, you can open it now by pressing the “Open Workspace…” button in the toolbar or via the shortcut `Cmd/Ctrl`+ Shift + `o`.
 
 ## How to use Markdown 📝
 
-Zettlr is a Markdown editor, which means that it mostly works like apps you already know, such as Microsoft Word, LibreOffice, or Apple Pages. But instead of having to click through an armada of toolbar buttons, you can apply structure to your elements using only characters, which means you never have to leave your keyboard! ✨
+Mint Stylus is a Markdown editor, which means that it mostly works like apps you already know, such as Microsoft Word, LibreOffice, or Apple Pages. But instead of having to click through an armada of toolbar buttons, you can apply structure to your elements using only characters, which means you never have to leave your keyboard! ✨
 
 Let’s quickly go over the most important elements:
 
@@ -43,31 +43,31 @@ Let’s quickly go over the most important elements:
 3. Lists are created literally — simply write `*`, `-`, or `+` on a new line. Numbered lists consist of a number followed by a dot.
 4. Finally, blockquotes are written exactly as quoted text is displayed in e-mails: Simply demarcate them using `>`.
 
-Of course, there are lots of other elements. Footnotes for instance — hover over this one with your cursor.[^1] During this tutorial, you will also learn about some special elements that Zettlr uses to enable truly academic work, as well as knowledge management using a Zettelkasten!
+Of course, there are lots of other elements. Footnotes for instance — hover over this one with your cursor.[^1] During this tutorial, you will also learn about some special elements that Mint Stylus uses to enable truly academic work, as well as knowledge management using a Zettelkasten!
 
 ## Links ⛓
 
-While they are not used very often in academic texts, links are a powerful tool of Markdown, which Zettlr takes to the next level. Zettlr acts really cleverly when it comes to links. Let’s quickly create one! Copy the following link to the clipboard: https://fosstodon.org/@zettlr
+While they are not used very often in academic texts, links are a powerful tool of Markdown, which Mint Stylus takes to the next level. Mint Stylus acts really cleverly when it comes to links. Let’s quickly create one! Copy the following link to the clipboard: https://fosstodon.org/@zettlr
 
-Now, select the following words: “link to our Mastodon account” and hit `Cmd/Ctrl+K`! Zettlr sees that you have a valid weblink in your clipboard and automatically uses this as the link target. Furthermore, Zettlr will automatically hide the link target and only display the linked text in order to make it easier to read through your text. If you don’t like some of the many elements that Zettlr renders by default, you can turn them off one by one in the “Display” preferences.
+Now, select the following words: “link to our Mastodon account” and hit `Cmd/Ctrl+K`! Mint Stylus sees that you have a valid weblink in your clipboard and automatically uses this as the link target. Furthermore, Mint Stylus will automatically hide the link target and only display the linked text in order to make it easier to read through your text. If you don’t like some of the many elements that Mint Stylus renders by default, you can turn them off one by one in the “Display” preferences.
 
-But Zettlr doesn’t only support common weblinks. If you link to a file that is somewhere on your computer, Zettlr can open it if you click on such a link. In general, just remember that Zettlr aims to make your writing experience as frictionless as possible, not just when it comes to links.
+But Mint Stylus doesn’t only support common weblinks. If you link to a file that is somewhere on your computer, Mint Stylus can open it if you click on such a link. In general, just remember that Mint Stylus aims to make your writing experience as frictionless as possible, not just when it comes to links.
 
 ## The Sidebar 📎
 
-Now that we got you covered with the Markdown basics, it’s time to show you some more of the stuff Zettlr can do! Click now on the column-like icon in the top right corner of the toolbar. This will open the [sidebar](https://docs.zettlr.com/en/sidebar/), which contains four tabs.
+Now that we got you covered with the Markdown basics, it’s time to show you some more of the stuff Mint Stylus can do! Click now on the column-like icon in the top right corner of the toolbar. This will open the [sidebar](https://docs.zettlr.com/en/sidebar/), which contains four tabs.
 
 The first tab displays a dynamically-generated table of contents. You can click the headings to jump to them in the text. The second tab contains a list of references (if you have any in your current document). This is meant as a powerful way for you to check what you have cited in the document.
 
-> Note that the references are only formatted using the built-in citation style. When you export your document, Zettlr will take care to use the citation style you chose, if you set one in the “Export”-preferences (more on that later).
+> Note that the references are only formatted using the built-in citation style. When you export your document, Mint Stylus will take care to use the citation style you chose, if you set one in the “Export”-preferences (more on that later).
 
-The third tab contains related files, that is: files for which Zettlr thinks they are related to your current file. It does so by looking at the tags as well as the internal links (more on that later) which you use within all files. On top of this list will be files that link to the file you're currently viewing. Afterwards follow files that have tags in common with the current file. The more tags a file has in common with your current file, the higher up it will be in this list.
+The third tab contains related files, that is: files for which Mint Stylus thinks they are related to your current file. It does so by looking at the tags as well as the internal links (more on that later) which you use within all files. On top of this list will be files that link to the file you're currently viewing. Afterwards follow files that have tags in common with the current file. The more tags a file has in common with your current file, the higher up it will be in this list.
 
 The last tab contains all non-markdown files that reside in your currently selected directory. You will see a file "LaTeX Guide.pdf". Wondering what it is? Let’s have a look: Click on it to open the file with your default PDF viewer now!
 
 ## Interactive Elements ⏯
 
-By now, you’ve already learned a lot about Zettlr. Can you check all the checkboxes?
+By now, you’ve already learned a lot about Mint Stylus. Can you check all the checkboxes?
 
 - [ ] Working with files and directories
 - [ ] Learned basic Markdown
@@ -77,9 +77,9 @@ Some elements in the editor are interactive, just like the checkboxes. Tables ar
 
 | File                        | Purpose                                                          | Filename        |
 |-----------------------------|------------------------------------------------------------------|-----------------|
-| Welcome to Zettlr!          | Gives a basic overview over the abilities of Zettlr              | welcome.md      |
-| Working with a Zettelkasten | Introduces the various Zettelkasten-features of Zettlr           | zettelkasten.md |
-| Citing with Zettlr          | Highlights the capabilities of working with references databases | citing.md       |
+| Welcome to Mint Stylus!          | Gives a basic overview over the abilities of Mint Stylus              | welcome.md      |
+| Working with a Zettelkasten | Introduces the various Zettelkasten-features of Mint Stylus           | zettelkasten.md |
+| Citing with Mint Stylus          | Highlights the capabilities of working with references databases | citing.md       |
 
 You can align columns as well as add and remove both rows and columns in the table. The table editor will always work on the column or row that is currently active. So, to remove a certain row, make sure that one cell within that row is selected. Feel free to play around a little bit with the table to get used to how it works!
 
@@ -89,4 +89,4 @@ You made it! The first part of the introduction is over. We did not cover a lot 
 
 But now enough basics, we are ready to take the full dive! Let’s head over to the Zettelkasten tutorial! To go there, simply `Cmd/Ctrl`-click the following wiki-link: [[zettelkasten]]
 
-[^1]: This text lives at the bottom of this file. But you can really put footnotes anywhere you want. Zettlr will display the corresponding footnote text when you hover over it with your mouse so you don't have to scroll somewhere to read what it says.
+[^1]: This text lives at the bottom of this file. But you can really put footnotes anywhere you want. Mint Stylus will display the corresponding footnote text when you hover over it with your mouse so you don't have to scroll somewhere to read what it says.

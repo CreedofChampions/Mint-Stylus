@@ -1,6 +1,6 @@
 # Liens utiles
 
-Si vous avez besoin d'aide, ou si vous voulez approfondir votre connaissance de Zettlr, les liens suivants vous permettront de trouver beaucoup d'informations. Suivez ces liens en cliquant dessus tout en appuyant sur la touche `Commande` (macOs) ou `Contrôle` (Windows/Linux).
+Si vous avez besoin d'aide, ou si vous voulez approfondir votre connaissance de Mint Stylus, les liens suivants vous permettront de trouver beaucoup d'informations. Suivez ces liens en cliquant dessus tout en appuyant sur la touche `Commande` (macOs) ou `Contrôle` (Windows/Linux).
 
 
 - [Voir la documentation](https://docs.zettlr.com)

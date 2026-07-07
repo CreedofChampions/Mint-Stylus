@@ -19,7 +19,7 @@ const plugins = [
     // such as '"production"', or by using JSON.stringify('production')."
     __GIT_COMMIT_HASH__: JSON.stringify(process.env.GIT_COMMIT_HASH),
     __BUILD_DATE__: JSON.stringify((new Date()).toISOString()),
-    __UPDATES_DISABLED__: JSON.stringify(process.env.ZETTLR_DISABLE_UPDATE_CHECK !== undefined ? '1' : '0')
+    __UPDATES_DISABLED__: JSON.stringify(process.env.MINT_STYLUS_DISABLE_UPDATE_CHECK !== undefined ? '1' : '0')
   })
 ]
 

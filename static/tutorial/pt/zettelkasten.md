@@ -7,23 +7,23 @@ keywords:
   - Niklas Luhmann
 ...
 
-# Zettelkästen com Zettlr 🗂
+# Zettelkästen com Mint Stylus 🗂
 
-Olá de novo! O que você acabou de clicar é o que chamamos de “link interno” — eles se parecem muito com wiki-links, mas na verdade são um recurso que ajuda o Zettlr a reconhecer como você organiza seu conhecimento. Vamos primeiro entender o que acabou de acontecer depois que você clicou no link.
+Olá de novo! O que você acabou de clicar é o que chamamos de “link interno” — eles se parecem muito com wiki-links, mas na verdade são um recurso que ajuda o Mint Stylus a reconhecer como você organiza seu conhecimento. Vamos primeiro entender o que acabou de acontecer depois que você clicou no link.
 
-Sempre que você clica em um link interno, o Zettlr faz duas coisas ao mesmo tempo: inicia uma busca em texto completo pelo seu conteúdo e tenta abrir o arquivo correspondente. Como você pode ver, a barra lateral esquerda agora não mostra mais os arquivos, mas sim os resultados da busca. Além disso, você agora está visualizando este arquivo!
+Sempre que você clica em um link interno, o Mint Stylus faz duas coisas ao mesmo tempo: inicia uma busca em texto completo pelo seu conteúdo e tenta abrir o arquivo correspondente. Como você pode ver, a barra lateral esquerda agora não mostra mais os arquivos, mas sim os resultados da busca. Além disso, você agora está visualizando este arquivo!
 
 Para alternar entre o gerenciador de arquivos e a busca em texto completo, você pode usar o botão de alternância de três vias no canto superior esquerdo da barra de ferramentas.
 
-> Você pode personalizar o que o Zettlr fará ao seguir esses links internos nas preferências do Zettelkasten.
+> Você pode personalizar o que o Mint Stylus fará ao seguir esses links internos nas preferências do Zettelkasten.
 
 ## Vinculando arquivos 🗄
 
-Quando se trata de criar links entre arquivos no seu Zettelkasten, existem duas formas gerais de fazer isso: usando um ID ou o nome do arquivo (sem extensão). Então, se você tiver um arquivo chamado “zettelkasten.md”, pode vinculá-lo escrevendo `[[zettelkasten]]`. O Zettlr tentará encontrar um arquivo com esse nome e abri-lo.
+Quando se trata de criar links entre arquivos no seu Zettelkasten, existem duas formas gerais de fazer isso: usando um ID ou o nome do arquivo (sem extensão). Então, se você tiver um arquivo chamado “zettelkasten.md”, pode vinculá-lo escrevendo `[[zettelkasten]]`. O Mint Stylus tentará encontrar um arquivo com esse nome e abri-lo.
 
 Mas e se você mudar o nome do arquivo? Então, obviamente, o link não funcionará mais! Para contornar essa limitação, você pode usar IDs. IDs são simplesmente sequências de dígitos que você pode usar para identificar seus arquivos de forma única. Então você pode usá-las para vincular seus arquivos. Vamos criar uma agora! Coloque o cursor após os dois pontos e pressione `Cmd/Ctrl+L`:
 
-Agora, este arquivo tem um ID que você pode usar! Experimente — volte para a aba com o guia “Bem-vindo ao Zettlr!” e digite `[[` em algum lugar. No autocomplete do pop-up, escolha este arquivo e confirme sua seleção. Depois, clique em `Cmd/Ctrl` nesse mesmo link para voltar a este arquivo. Você notará que o Zettlr iniciou outra busca, mas, mais importante: você pode ver os resultados da busca destacados! Isso é útil tanto para o cruzamento de links do Zettelkasten quanto para pesquisas globais.
+Agora, este arquivo tem um ID que você pode usar! Experimente — volte para a aba com o guia “Bem-vindo ao Mint Stylus!” e digite `[[` em algum lugar. No autocomplete do pop-up, escolha este arquivo e confirme sua seleção. Depois, clique em `Cmd/Ctrl` nesse mesmo link para voltar a este arquivo. Você notará que o Mint Stylus iniciou outra busca, mas, mais importante: você pode ver os resultados da busca destacados! Isso é útil tanto para o cruzamento de links do Zettelkasten quanto para pesquisas globais.
 
 ## Usando tags 🏷
 
@@ -42,6 +42,6 @@ Não vamos abordar aqui métodos para trabalhar efetivamente com um Zettelkasten
 
 Esses serão excelentes pontos de partida para sua jornada de aprendizado sobre a arte de criar um Zettelkasten!
 
-Uma última coisa: como a forma como os Zettelkästen funcionam não é muito padronizada e existem muitas maneiras certas de fazer isso, o Zettlr permite personalizar completamente cada aspecto da metodologia Zettelkasten. Para começar, dê uma olhada em [nossa documentação sobre como isso funciona](https://docs.zettlr.com/en/reference/settings/#zettelkasten)!
+Uma última coisa: como a forma como os Zettelkästen funcionam não é muito padronizada e existem muitas maneiras certas de fazer isso, o Mint Stylus permite personalizar completamente cada aspecto da metodologia Zettelkasten. Para começar, dê uma olhada em [nossa documentação sobre como isso funciona](https://docs.zettlr.com/en/reference/settings/#zettelkasten)!
 
-**Pronto para mais?** Então vá para o nosso guia sobre [[citing]] com o Zettlr!
+**Pronto para mais?** Então vá para o nosso guia sobre [[citing]] com o Mint Stylus!
