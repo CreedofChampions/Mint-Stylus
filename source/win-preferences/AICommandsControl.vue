@@ -138,11 +138,23 @@ function flowHint (cmd: AICommandConfig): string {
  * Serialises the working list into plain objects and writes it to config. Called
  * after every edit so changes take effect immediately (the main window's chooser
  * re-reads ai.commands whenever it opens).
+ *
+ * We normalise an empty name IN THE REACTIVE OBJECT (not just the serialised
+ * copy) so what the Preferences input shows always matches what is stored and
+ * what the chooser will display — otherwise the two surfaces would disagree. An
+ * empty prompt is written as-is: reconcileCommands keeps the command (it never
+ * drops for an empty prompt) and the run path falls back to a generic
+ * instruction until the user fills it in, so nothing silently vanishes.
  */
 function persist (): void {
+  for (const c of commands.value) {
+    if (c.name.trim() === '') {
+      c.name = trans('Untitled command')
+    }
+  }
   const plain = commands.value.map(c => ({
     id: c.id,
-    name: c.name.trim() === '' ? trans('Untitled command') : c.name,
+    name: c.name,
     prompt: c.prompt,
     flow: c.flow,
     builtin: c.builtin

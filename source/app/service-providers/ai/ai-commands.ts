@@ -159,9 +159,13 @@ export function isValidCommand (value: unknown): value is AICommandConfig {
  * command list. Never throws:
  *
  *  - a non-array (missing / corrupt config) yields the built-in defaults;
- *  - each entry is validated; malformed entries are coerced where possible
- *    (flow → 'stream', builtin → false) or dropped if unusable (no id/name/prompt);
- *  - duplicate ids are de-duplicated (first wins);
+ *  - an entry is only DROPPED when it is unusable as an identity: not an object,
+ *    or missing / duplicate `id`. Everything else is COERCED, never dropped, so
+ *    a command a user is still editing never silently disappears:
+ *      - an empty `name` becomes 'Untitled command';
+ *      - an empty `prompt` is kept as-is (the run path falls back to a generic
+ *        instruction until the user fills it in) — it is NOT a reason to drop;
+ *      - an invalid `flow` becomes 'stream'; a non-boolean `builtin` becomes false;
  *  - an empty result falls back to the built-in defaults so the UI is never blank.
  *
  * @param   {unknown}            stored  The raw config value.
@@ -182,11 +186,15 @@ export function reconcileCommands (stored: unknown): AICommandConfig[] {
     }
     const c = entry as Record<string, unknown>
     const id = typeof c.id === 'string' ? c.id.trim() : ''
-    const name = typeof c.name === 'string' ? c.name : ''
-    const prompt = typeof c.prompt === 'string' ? c.prompt : ''
-    if (id === '' || name.trim() === '' || prompt.trim() === '' || seen.has(id)) {
+    // Drop ONLY on an unusable identity (no id / duplicate id). Never drop for a
+    // transiently-empty name or prompt — that would make a command the user is
+    // mid-edit vanish from the chooser (see reconcile doc above).
+    if (id === '' || seen.has(id)) {
       continue
     }
+    const rawName = typeof c.name === 'string' ? c.name : ''
+    const name = rawName.trim() === '' ? 'Untitled command' : rawName
+    const prompt = typeof c.prompt === 'string' ? c.prompt : ''
     const flow: AICommandFlow = (typeof c.flow === 'string' && VALID_FLOWS.includes(c.flow as AICommandFlow))
       ? c.flow as AICommandFlow
       : 'stream'
