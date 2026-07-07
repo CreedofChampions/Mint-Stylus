@@ -206,6 +206,15 @@ declare global {
        */
       search: (query: string) => Promise<string>
       /**
+       * Opens a native folder picker and resolves with the chosen absolute path
+       * (or '' if cancelled).
+       */
+      pickContextFolder: () => Promise<string>
+      /**
+       * Probes a context source and resolves with a short human status string.
+       */
+      testContext: (payload: { source: string, folder?: string, url?: string }) => Promise<string>
+      /**
        * Reads the current "Write in My Style" precursor text.
        */
       getStyle: () => Promise<string>

@@ -51,6 +51,21 @@
              main-process AIProvider reads ai.thinkingLevel per request. -->
         <div class="question-bar-row">
           <QuestionBar v-on:ask="handleAskQuestion($event)"></QuestionBar>
+          <!-- GLOBAL context-source dropdown: plug a local folder group or an MCP
+               server in as extra context for every AI request. Selecting Folder/MCP
+               with nothing configured immediately lets you plug it in, and turns
+               context on automatically. -->
+          <label
+            class="ai-thinking-level ai-context-source"
+            v-bind:title="contextTitle"
+          >
+            <span class="ai-thinking-level-label">{{ trans('Context:') }}</span>
+            <select v-model="contextSource" v-on:change="onContextSourceChange">
+              <option value="none">{{ trans('None') }}</option>
+              <option value="folder">{{ trans('Folder') }}</option>
+              <option value="mcp">{{ trans('MCP') }}</option>
+            </select>
+          </label>
           <label
             class="ai-thinking-level"
             v-bind:title="trans('Thinking level: how much reasoning effort the AI spends on every request (all AI features)')"
@@ -728,6 +743,81 @@ const thinkingLevel = ref<string>(String(window.config.get('ai.thinkingLevel') ?
  */
 function setThinkingLevel (): void {
   window.config.set('ai.thinkingLevel', thinkingLevel.value)
+}
+
+// AI-CREATED FOR MINT STYLUS: the GLOBAL context-source selector (top-right,
+// next to Thinking). 'none' | 'folder' | 'mcp'. Selecting Folder/MCP with
+// nothing configured immediately lets the user plug it in (a folder picker or a
+// URL prompt) and turns context ON; the main-process AIProvider reads
+// ai.contextSource on every request and injects the folder/MCP context.
+const contextSource = ref<string>(String(window.config.get('ai.contextSource') ?? 'none'))
+
+const contextTitle = computed<string>(() => {
+  if (contextSource.value === 'folder') {
+    const folder = String(window.config.get('ai.contextFolder') ?? '')
+    return folder !== ''
+      ? trans('Context: pulling from your folder group (%s). Change it in Preferences → AI.', folder)
+      : trans('Context: choose a local folder group to pull context from.')
+  }
+  if (contextSource.value === 'mcp') {
+    const url = String(window.config.get('ai.contextMcpUrl') ?? '')
+    return url !== ''
+      ? trans('Context: querying your MCP server (%s). Change it in Preferences → AI.', url)
+      : trans('Context: enter an MCP server URL to pull context from.')
+  }
+  return trans('Context: pick a local folder group or an MCP server to give the AI extra context on every request.')
+})
+
+/**
+ * Handles a change of the context-source dropdown. Picking Folder/MCP with
+ * nothing configured yet immediately lets the user plug it in (folder picker /
+ * URL prompt) and, on success, leaves context ON. Cancelling with nothing
+ * previously configured reverts the dropdown to None so it never claims to be on
+ * without a source.
+ */
+function onContextSourceChange (): void {
+  const source = contextSource.value
+
+  if (source === 'folder') {
+    const existing = String(window.config.get('ai.contextFolder') ?? '')
+    if (existing === '') {
+      window.ai.pickContextFolder()
+        .then(folderPath => {
+          if (folderPath !== '') {
+            window.config.set('ai.contextFolder', folderPath)
+            window.config.set('ai.contextSource', 'folder')
+          } else {
+            // Cancelled and nothing configured → don't pretend context is on.
+            contextSource.value = 'none'
+            window.config.set('ai.contextSource', 'none')
+          }
+        })
+        .catch(err => { console.error('Folder pick failed', err); contextSource.value = 'none' })
+      return
+    }
+    window.config.set('ai.contextSource', 'folder')
+    return
+  }
+
+  if (source === 'mcp') {
+    const existing = String(window.config.get('ai.contextMcpUrl') ?? '')
+    if (existing === '') {
+      const url = window.prompt(trans('Enter your MCP server URL (Streamable HTTP endpoint):'), 'http://localhost:3000/mcp')
+      const trimmed = (url ?? '').trim()
+      if (trimmed !== '') {
+        window.config.set('ai.contextMcpUrl', trimmed)
+        window.config.set('ai.contextSource', 'mcp')
+      } else {
+        contextSource.value = 'none'
+        window.config.set('ai.contextSource', 'none')
+      }
+      return
+    }
+    window.config.set('ai.contextSource', 'mcp')
+    return
+  }
+
+  window.config.set('ai.contextSource', 'none')
 }
 
 const leftComponentBeforeAI = ref<'fileManager'|'globalSearch'>('fileManager')
