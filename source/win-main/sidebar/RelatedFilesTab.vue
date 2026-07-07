@@ -248,7 +248,7 @@ function beginDragRelatedFile (event: DragEvent, filePath: string): void {
     return
   }
 
-  event.dataTransfer?.setData('text/x-zettlr-file', JSON.stringify({
+  event.dataTransfer?.setData('text/x-mint-stylus-file', JSON.stringify({
     type: descriptor.type, // Can be file, code, or directory
     path: descriptor.path,
     id: descriptor.type === 'file' ? descriptor.id : '' // Convenience

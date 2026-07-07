@@ -535,7 +535,7 @@ function startDragging (event: DragEvent): void {
   const dragPath = event.currentTarget.dataset.path
   if (dragPath !== undefined && event.dataTransfer !== null) {
     event.dataTransfer.dropEffect = 'move'
-    event.dataTransfer.setData('x-zettlr/workspaces-drag-source', dragPath)
+    event.dataTransfer.setData('x-mint-stylus/workspaces-drag-source', dragPath)
   }
 }
 
@@ -564,7 +564,7 @@ function drop (event: DragEvent): void {
     return
   }
 
-  const sourcePath = event.dataTransfer.getData('x-zettlr/workspaces-drag-source')
+  const sourcePath = event.dataTransfer.getData('x-mint-stylus/workspaces-drag-source')
   const targetPath = targetLi.dataset.path
 
   if (sourcePath === '' || targetPath === undefined) {

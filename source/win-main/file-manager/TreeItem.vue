@@ -609,7 +609,7 @@ function beginDragging (event: DragEvent): void {
   }
 
   event.dataTransfer.dropEffect = 'move'
-  event.dataTransfer.setData('text/x-zettlr-file', JSON.stringify({
+  event.dataTransfer.setData('text/x-mint-stylus-file', JSON.stringify({
     type: props.item.type,
     path: props.item.path,
     id: (props.item.type === 'file') ? props.item.id : ''
@@ -681,7 +681,7 @@ function handleDrop (event: DragEvent): void {
   let data
 
   try {
-    const eventData = event.dataTransfer.getData('text/x-zettlr-file')
+    const eventData = event.dataTransfer.getData('text/x-mint-stylus-file')
     data = JSON.parse(eventData) // Throws error if eventData === ''
   } catch (err) {
     // Error in JSON stringifying (either b/c malformed or no text)

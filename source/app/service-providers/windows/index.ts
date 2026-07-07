@@ -306,7 +306,7 @@ export default class WindowProvider extends ProviderContract {
    * should begin opening the main windows, if applicable.
    */
   public maybeShowWindows (): void {
-    const traySupported = process.env.ZETTLR_IS_TRAY_SUPPORTED === '1'
+    const traySupported = process.env.MINT_STYLUS_IS_TRAY_SUPPORTED === '1'
     if (!this.suppressWindowOpening || !traySupported) {
       this.suppressWindowOpening = false
       this.syncMainWindows()

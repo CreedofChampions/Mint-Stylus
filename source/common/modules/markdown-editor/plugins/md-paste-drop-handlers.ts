@@ -188,11 +188,11 @@ export const mdPasteDropHandlers: DOMEventHandlers<any> = {
       return false
     }
 
-    if (dataTransfer.getData('zettlr/document-tab') !== '') {
+    if (dataTransfer.getData('mint-stylus/document-tab') !== '') {
       return false // There's a document being dragged, let the MainEditor capture the event
     }
 
-    const zettlrFile = dataTransfer.getData('text/x-zettlr-file')
+    const zettlrFile = dataTransfer.getData('text/x-mint-stylus-file')
 
     if (dataTransfer.files.length === 0 && zettlrFile === '') {
       return false

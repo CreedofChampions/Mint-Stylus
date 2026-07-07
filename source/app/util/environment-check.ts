@@ -145,11 +145,11 @@ export default async function environmentCheck (): Promise<void> {
 
   // Determine if the platform as Tray support
   try {
-    process.env.ZETTLR_IS_TRAY_SUPPORTED = await isTraySupported() ? '1' : '0'
+    process.env.MINT_STYLUS_IS_TRAY_SUPPORTED = await isTraySupported() ? '1' : '0'
   } catch (err: unknown) {
-    process.env.ZETTLR_IS_TRAY_SUPPORTED = '0'
+    process.env.MINT_STYLUS_IS_TRAY_SUPPORTED = '0'
     if (err instanceof Error) {
-      process.env.ZETTLR_TRAY_ERROR = err.message
+      process.env.MINT_STYLUS_TRAY_ERROR = err.message
       console.warn(err.message)
     }
   }
