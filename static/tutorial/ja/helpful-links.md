@@ -1,6 +1,6 @@
 # 参考リンク
 
-ヘルプが必要な場合や、Zettlr についてさらに詳しく知りたい場合は、以下のリンクからオンラインで多くの情報を得ることができます。リンクをクリックする際は、`Command` (macOS) または `Control` (Windows/Linux) キーを押しながらクリックしてください。
+ヘルプが必要な場合や、Mint Stylus についてさらに詳しく知りたい場合は、以下のリンクからオンラインで多くの情報を得ることができます。リンクをクリックする際は、`Command` (macOS) または `Control` (Windows/Linux) キーを押しながらクリックしてください。
 
 - [ドキュメントを見る](https://docs.zettlr.com)
 - [Discord でヘルプを得る](https://go.zettlr.com/discord)

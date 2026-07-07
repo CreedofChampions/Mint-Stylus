@@ -1,14 +1,14 @@
 {
   "name": "mint-stylus",
   "productName": "Mint Stylus",
-  "homepage": "https://www.mintstylus.example",
+  "homepage": "https://github.com/CreedofChampions/Mint-Stylus",
   "author": {
     "name": "Mint Stylus Team",
-    "email": "info@mintstylus.example"
+    "email": "269247302+CreedofChampions@users.noreply.github.com"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/OPERATOR-ACCOUNT/Mint-Stylus.git"
+    "url": "git://github.com/CreedofChampions/Mint-Stylus.git"
   },
   "version": "4.6.0",
   "license": "GPL-3.0",
@@ -17,13 +17,13 @@
   "type": "commonjs",
   "scripts": {
     "start": "cross-env NODE_ENV=develop node scripts/test-gui/index.mjs",
-    "package": "cross-env NODE_ENV=production ZETTLR_DISABLE_UPDATE_CHECK=1 electron-forge package",
-    "package:mac-x64": "cross-env NODE_ENV=production ZETTLR_DISABLE_UPDATE_CHECK=1 npm_config_arch=x64 electron-forge package --platform=darwin --arch=x64",
-    "package:mac-arm": "cross-env NODE_ENV=production ZETTLR_DISABLE_UPDATE_CHECK=1 npm_config_arch=arm64 electron-forge package --platform=darwin --arch=arm64",
-    "package:win-x64": "cross-env NODE_ENV=production ZETTLR_DISABLE_UPDATE_CHECK=1 npm_config_arch=x64 electron-forge package --platform=win32 --arch=x64",
-    "package:win-arm": "cross-env NODE_ENV=production ZETTLR_DISABLE_UPDATE_CHECK=1 npm_config_arch=arm64 electron-forge package --platform=win32 --arch=arm64",
-    "package:linux-x64": "cross-env NODE_ENV=production ZETTLR_DISABLE_UPDATE_CHECK=1 npm_config_arch=x64 electron-forge package --platform=linux --arch=x64",
-    "package:linux-arm": "cross-env NODE_ENV=production ZETTLR_DISABLE_UPDATE_CHECK=1 npm_config_arch=arm64 electron-forge package --platform=linux --arch=arm64",
+    "package": "cross-env NODE_ENV=production MINT_STYLUS_DISABLE_UPDATE_CHECK=1 electron-forge package",
+    "package:mac-x64": "cross-env NODE_ENV=production MINT_STYLUS_DISABLE_UPDATE_CHECK=1 npm_config_arch=x64 electron-forge package --platform=darwin --arch=x64",
+    "package:mac-arm": "cross-env NODE_ENV=production MINT_STYLUS_DISABLE_UPDATE_CHECK=1 npm_config_arch=arm64 electron-forge package --platform=darwin --arch=arm64",
+    "package:win-x64": "cross-env NODE_ENV=production MINT_STYLUS_DISABLE_UPDATE_CHECK=1 npm_config_arch=x64 electron-forge package --platform=win32 --arch=x64",
+    "package:win-arm": "cross-env NODE_ENV=production MINT_STYLUS_DISABLE_UPDATE_CHECK=1 npm_config_arch=arm64 electron-forge package --platform=win32 --arch=arm64",
+    "package:linux-x64": "cross-env NODE_ENV=production MINT_STYLUS_DISABLE_UPDATE_CHECK=1 npm_config_arch=x64 electron-forge package --platform=linux --arch=x64",
+    "package:linux-arm": "cross-env NODE_ENV=production MINT_STYLUS_DISABLE_UPDATE_CHECK=1 npm_config_arch=arm64 electron-forge package --platform=linux --arch=arm64",
     "release:mac-x64": "electron-builder --mac --x64 --publish never --prepackaged \"out/Mint Stylus-darwin-x64/Mint Stylus.app\"",
     "release:mac-arm": "electron-builder --mac --arm64 --publish never --prepackaged \"out/Mint Stylus-darwin-arm64/Mint Stylus.app\"",
     "release:win-x64": "electron-builder --win --x64 --publish never --prepackaged \"out/Mint Stylus-win32-x64\"",

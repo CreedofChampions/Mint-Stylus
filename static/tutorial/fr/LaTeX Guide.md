@@ -1,7 +1,7 @@
 ---
 title: "Guide LaTeX"
 author:
-  - The Zettlr Team
+  - The Mint Stylus Team
   - Framatophe (trad.)
 date: 2020-07-04
 ...
@@ -10,7 +10,7 @@ date: 2020-07-04
 
 # Installer LaTeX
 
-Zettlr fonctionne mieux avec LaTeX, qui est gratuit et fonctionne sur tous les systèmes d'exploitation. Nous vous recommandons de les installer dès que possible afin de pouvoir exporter tous vos fichiers et travailler avec vos collègues. Même après être passé au Markdown, vous aurez à traiter avec des documents Word et vous aurez besoin de partager vos réflexions avec des personnes qui n'utilisent pas le Markdown.
+Mint Stylus fonctionne mieux avec LaTeX, qui est gratuit et fonctionne sur tous les systèmes d'exploitation. Nous vous recommandons de les installer dès que possible afin de pouvoir exporter tous vos fichiers et travailler avec vos collègues. Même après être passé au Markdown, vous aurez à traiter avec des documents Word et vous aurez besoin de partager vos réflexions avec des personnes qui n'utilisent pas le Markdown.
 
 LaTeX peut être déployé avec un installateur standard sur toutes les plateformes. Les distributions recommandées sont :
 

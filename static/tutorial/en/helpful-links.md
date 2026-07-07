@@ -1,6 +1,6 @@
 # Helpful Links
 
-If you need any help, or want to dig in deeper into Zettlr, the following links will provide you with lots of information online. Follow them by holding `Command` (macOS) or `Control` (Windows/Linux) while clicking on them.
+If you need any help, or want to dig in deeper into Mint Stylus, the following links will provide you with lots of information online. Follow them by holding `Command` (macOS) or `Control` (Windows/Linux) while clicking on them.
 
 - [View the documentation](https://docs.zettlr.com)
 - [Get help on Discord](https://go.zettlr.com/discord)
