@@ -12,7 +12,7 @@
  * END HEADER
  */
 
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import { app, shell } from 'electron'
 import { makeExport } from './exporter'
 import { trans } from '@common/i18n-main'
@@ -36,7 +36,7 @@ export interface ExportIPCAPI {
   exportTo: string
 }
 
-export default class Export extends ZettlrCommand {
+export default class Export extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, [ 'export', 'custom-export' ])
   }

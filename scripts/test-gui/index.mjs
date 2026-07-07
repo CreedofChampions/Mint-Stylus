@@ -1,7 +1,7 @@
 /**
  * This file is used to prepare a testing environment, that is: Creating
  * a brand new config that is solely used for testing purposes, and prepare
- * a simple directory structure that demonstrates all capabilities of Zettlr.
+ * a simple directory structure that demonstrates all capabilities of Mint Stylus.
  *
  * IMPORTANT: What we need to take care of is to keep all the configuration
  * examples intact! So whenever we change something in the directory loader or
@@ -118,7 +118,7 @@ async function prepareEnvironment (argv) {
  * @param   {string[]}  argv  The arguments provided (sans arguments required for this script itself)
  */
 function startApp (argv = []) {
-  info('Starting Zettlr with custom configuration ...')
+  info('Starting Mint Stylus with custom configuration ...')
 
   if (argv.length > 0) {
     warn('Supplying additional arguments to process: [' + argv.join(', ') + ']')

@@ -30,11 +30,11 @@ report_discord() {
   curl -d "$(cat <<EOF | jq -Rs '{content: .}'
 ## Repository Audit Results
 
-A new audit has been run against Zettlr’s \`yarn.lock\` file. This happens automatically if dependencies have changed, or if a maintainer has manually requested an audit. There have been **${AUDIT_COUNT} results**.
+A new audit has been run against Mint Stylus’s \`yarn.lock\` file. This happens automatically if dependencies have changed, or if a maintainer has manually requested an audit. There have been **${AUDIT_COUNT} results**.
 
 For the full results (${AUDIT_CHARS} characters), please see the summary of the run: ${RUN_URL}.
 
-**Disclaimer**: Many results are not relevant for the app’s security, and the pure number of results cannot be used to infer whether there exists a security risk for Zettlr and its users. The maintainers are able to infer whether a result indicates a critical issue that needs fixing.
+**Disclaimer**: Many results are not relevant for the app’s security, and the pure number of results cannot be used to infer whether there exists a security risk for Mint Stylus and its users. The maintainers are able to infer whether a result indicates a critical issue that needs fixing.
 EOF
 )" -H "Content-Type: application/json" -X POST "$WEBHOOK"
 }

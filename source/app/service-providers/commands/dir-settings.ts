@@ -13,7 +13,7 @@
  */
 
 import type { AppServiceContainer } from 'source/app/app-service-container'
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import type { DirDescriptor } from 'source/types/common/fsal'
 
 export interface DirSettingsCommandAPI {
@@ -21,7 +21,7 @@ export interface DirSettingsCommandAPI {
   settings: Partial<DirDescriptor['settings']>
 }
 
-export default class DirSettings extends ZettlrCommand {
+export default class DirSettings extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, ['set-directory-setting'])
   }

@@ -96,7 +96,7 @@ export default class TargetProvider extends ProviderContract {
 
   /**
    * Verifies the validity of all targets.
-   * @return {ZettlrTargets} Chainability.
+   * @return {MintStylusTargets} Chainability.
    */
   async verify (): Promise<void> {
     // A target is defined to be "valid" if it contains a valid integer number

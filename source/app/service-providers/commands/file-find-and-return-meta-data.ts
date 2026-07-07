@@ -14,7 +14,7 @@
  */
 
 import extractYamlFrontmatter from '@common/util/extract-yaml-frontmatter'
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import type { MDFileDescriptor } from '@dts/common/fsal'
 import type { AppServiceContainer } from 'source/app/app-service-container'
 
@@ -38,7 +38,7 @@ export interface FindFileAndReturnMetadataResult {
   modtime: number
 }
 
-export default class FilePathFindMetaData extends ZettlrCommand {
+export default class FilePathFindMetaData extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, [ 'find-exact', 'file-find-and-return-meta-data' ])
   }

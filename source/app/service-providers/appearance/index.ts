@@ -7,7 +7,7 @@
  * Maintainer:      Hendrik Erz
  * License:         GNU GPL v3
  *
- * Description:     Enables Zettlr to adapt its display mode according to user
+ * Description:     Enables Mint Stylus to adapt its display mode according to user
  *                  settings.
  *
  * END HEADER
@@ -131,7 +131,7 @@ export default class AppearanceProvider extends ProviderContract {
       if (command === 'get-accent-color') {
         // A renderer has requested the current accent colour. The accent colour
         // MUST be returned, and can be retrieved automatically for macOS and
-        // Windows, and will be the Zettlr green on Linux systems. Format is
+        // Windows, and will be the Mint Stylus green on Linux systems. Format is
         // always RGBA hexadecimal without preceeding #-sign.
         return getSystemColors()
       }
@@ -172,7 +172,7 @@ export default class AppearanceProvider extends ProviderContract {
 
     // By tracking the status of the time, we avoid annoying people by forcing
     // the dark or light theme even if they decide to change it later on. This
-    // time Zettlr will only trigger a theme change if we traversed from
+    // time Mint Stylus will only trigger a theme change if we traversed from
     // daytime to nighttime, and leave out the question of whether or not dark
     // mode has been active or not.
     if (this.scheduleWasDark !== this.scheduleIsDark()) {
@@ -206,7 +206,7 @@ export default class AppearanceProvider extends ProviderContract {
   }
 
   /**
-   * Returns true if, according to the schedule, Zettlr should now be in dark
+   * Returns true if, according to the schedule, Mint Stylus should now be in dark
    * mode.
    *
    * @return {boolean} Whether or not time indicates it should be dark now.

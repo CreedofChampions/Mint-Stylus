@@ -13,7 +13,7 @@
  */
 
 import { fetchLinkPreview, type LinkPreviewResult } from '@common/util/fetch-link-preview'
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import path from 'path'
 import extractYamlFrontmatter from '@common/util/extract-yaml-frontmatter'
 import { nativeImage } from 'electron'
@@ -21,7 +21,7 @@ import type { AppServiceContainer } from 'source/app/app-service-container'
 
 const MAX_FILE_PREVIEW_LENGTH = 300
 
-export default class FetchLinkPreview extends ZettlrCommand {
+export default class FetchLinkPreview extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'fetch-link-preview')
   }

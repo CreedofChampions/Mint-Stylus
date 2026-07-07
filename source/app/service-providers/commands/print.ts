@@ -12,10 +12,10 @@
  * END HEADER
  */
 
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import type { AppServiceContainer } from 'source/app/app-service-container'
 
-export default class Print extends ZettlrCommand {
+export default class Print extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'print')
   }

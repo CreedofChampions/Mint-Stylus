@@ -6,7 +6,7 @@
  * Maintainer:      Hendrik Erz
  * License:         GNU GPL v3
  *
- * Description:     Extracts valid files to be opened with Zettlr
+ * Description:     Extracts valid files to be opened with Mint Stylus
  *                  from the given argv string.
  *
  * END HEADER

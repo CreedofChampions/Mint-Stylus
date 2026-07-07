@@ -12,7 +12,7 @@
  * END HEADER
  */
 
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import ky, { HTTPError } from 'ky'
 import { URLSearchParams } from 'url'
 import { app } from 'electron'
@@ -213,7 +213,7 @@ async function fetchSupportedLanguages (server: string): Promise<string[]> {
 export type LanguageToolLinterRequest = { data: AnnotationData, language: string }
 export type LanguageToolLinterResponse = [LanguageToolAPIResponse, supportedLanguages: string[]]|string|undefined
 
-export default class LanguageTool extends ZettlrCommand {
+export default class LanguageTool extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, [ 'run-language-tool', 'add-language-tool-ignore-rule' ])
   }
@@ -298,7 +298,7 @@ export default class LanguageTool extends ZettlrCommand {
 
     const headers = {
       // NOTE: For debugging purposes, we send a custom User-Agent string. This
-      // should help figure out potential problems in case Zettlr causes large
+      // should help figure out potential problems in case Mint Stylus causes large
       // request flows to the official servers
       'User-Agent': `Zettlr/${app.getVersion()} (${process.platform}-${process.arch})`
     }

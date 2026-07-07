@@ -47,7 +47,7 @@ export default class FSALWatchdog {
       ignored: WATCHDOG_IGNORE_RE,
       persistent: true,
       ignoreInitial: true, // Do not track the initial watch as changes
-      followSymlinks: false, // Zettlr does not support symlinks
+      followSymlinks: false, // Mint Stylus does not support symlinks
       ignorePermissionErrors: true, // In the worst case one has to reboot the software, but so it looks nicer.
 
       // Chokidar should always be using fsevents, but we will be leaving this

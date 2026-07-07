@@ -67,7 +67,7 @@ export function attachAppNavigationHandlers (log: LogProvider): void {
     webContents.on('will-navigate', (event, url) => {
       log.info(`[Navigation Handler] webContents wants to navigate to ${url}`)
       // NOTE: app.isPackaged is false if the executable is called electron
-      // (instead of Zettlr)
+      // (instead of Mint Stylus)
       if (!app.isPackaged && url.startsWith('http://localhost:3000')) {
         // We are in development, so we must make sure to allow webpack to
         // actually reload the windows. Webpack will always spin up devServers

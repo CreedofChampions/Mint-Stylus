@@ -9,7 +9,7 @@
  *
  * Description:     This linter utilizes the YAML library's ability to collect
  *                  every error that it encounters while parsing a document to
- *                  lint, e.g., the defaults files within Zettlr.
+ *                  lint, e.g., the defaults files within Mint Stylus.
  *
  * END HEADER
  */

@@ -175,7 +175,7 @@ async function writeDefaults (
   const { cslLibrary, cslStyle, stripTags, stripLinks, enforceMarkSupport } = cfg.export
   const { linkFormat } = cfg.zkn
 
-  // First step: Reader treatment. Zettlr can modify the reader to align with
+  // First step: Reader treatment. Mint Stylus can modify the reader to align with
   // the user preferences.
   const parsedReader = parseReaderWriter(defaults.reader as string)
   const readsMarkdown = EXT2READER['md'].includes(parsedReader.name)

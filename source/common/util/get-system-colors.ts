@@ -2,7 +2,7 @@ import { systemPreferences } from 'electron'
 
 /**
   * Returns the current system colors. The return value depends on the
-  * platform. On Linux and macOS < 10.14, this will always return the Zettlr
+  * platform. On Linux and macOS < 10.14, this will always return the Mint Stylus
   * green with a white contrast. On Windows and macOS >= 10.14, this will
   * return the current accent color reported by the OS and a contrast color
   * that is calculated based on a formula either light or dark.
@@ -16,7 +16,7 @@ import { systemPreferences } from 'electron'
   */
 export function getSystemColors (): { accent: string, contrast: string } {
   const colorFallback = {
-    accent: '1cb27eff', // Fully opaque Zettlr green
+    accent: '1cb27eff', // Fully opaque Mint Stylus green
     contrast: 'ffffffff' // White as a contrast
   }
   const darkContrast = '333333ff'

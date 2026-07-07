@@ -25,10 +25,10 @@
  * END HEADER
  */
 
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import type { AppServiceContainer } from 'source/app/app-service-container'
 
-export default class OpenAIPreferences extends ZettlrCommand {
+export default class OpenAIPreferences extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'open-ai-preferences')
   }

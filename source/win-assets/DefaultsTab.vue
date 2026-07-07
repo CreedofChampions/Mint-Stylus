@@ -112,10 +112,10 @@ import { parseReaderWriter } from 'source/common/pandoc-util/parse-reader-writer
 const ipcRenderer = window.ipc
 
 const NEW_DEFAULTS_FILE_CONTENTS = `# This is a new defaults file that you can use to define rules for exporting or
-# importing files to and from Zettlr. The only two required properties are the
-# writer and reader ones. Without them, Zettlr will not be able to export or
+# importing files to and from Mint Stylus. The only two required properties are the
+# writer and reader ones. Without them, Mint Stylus will not be able to export or
 # import your files. You can choose any reader or writer that is supported by
-# Pandoc. Zettlr will automatically show the profile at appropriate locations
+# Pandoc. Mint Stylus will automatically show the profile at appropriate locations
 # based on the values of the writer and reader properties.
 # More info: https://pandoc.org/MANUAL.html.
 reader: markdown

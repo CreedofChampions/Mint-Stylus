@@ -8,7 +8,7 @@
  * License:         GNU GPL v3
  *
  * Description:     A small state field that contains various infos about the
- *                  associated Zettlr project, if the currently loaded file is
+ *                  associated Mint Stylus project, if the currently loaded file is
  *                  part of such a project.
  *
  * END HEADER
@@ -39,7 +39,7 @@ export const projectInfoUpdateEffect = StateEffect.define<ProjectInfo|null>()
 
 /**
  * This field can be used to provide to the editor further context information
- * on the file's association with a Zettlr project.
+ * on the file's association with a Mint Stylus project.
  */
 export const projectInfoField = StateField.define<ProjectInfo|null>({
   create (_state: EditorState) {

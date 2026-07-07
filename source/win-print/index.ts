@@ -2,7 +2,7 @@
  * @ignore
  * BEGIN HEADER
  *
- * Contains:        ZettlrPrintWindow class
+ * Contains:        MintStylusPrintWindow class
  * CVM-Role:        Model
  * Maintainer:      Hendrik Erz
  * License:         GNU GPL v3

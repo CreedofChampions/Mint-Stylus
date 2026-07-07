@@ -80,7 +80,7 @@ async function loadJSON (databasePath: string, logger?: LogProvider): Promise<Da
   // NOTE February 19, 2026: After receiving reports of users not being able to
   // get citekeys to autocomplete, I found out by looking at a problematic CSL
   // JSON file that due to the 8.0.3 update of Zotero, one item was missing its
-  // citekey. For the past almost decade, Zettlr could assume that the CSL JSON
+  // citekey. For the past almost decade, Mint Stylus could assume that the CSL JSON
   // produced by Zotero was sane, because we always cast the parsed JSON data as
   // citekey and be done with it. To improve app stability, we're going to treat
   // each item as unknown before loading it now. This also guards against future

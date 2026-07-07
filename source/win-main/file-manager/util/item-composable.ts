@@ -175,7 +175,7 @@ export function useItemComposable (
         .catch(e => console.error(e))
     } else if (type === 'other') {
       const { files } = configStore.config
-      // Determine if we can open the file in Zettlr
+      // Determine if we can open the file in Mint Stylus
       if (
         (hasImageExt(obj.value.path) && files.images.openWith === 'zettlr') ||
         (hasPDFExt(obj.value.path) && files.pdf.openWith === 'zettlr')

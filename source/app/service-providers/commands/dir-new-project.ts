@@ -13,9 +13,9 @@
  */
 
 import type { AppServiceContainer } from 'source/app/app-service-container'
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 
-export default class DirNewProject extends ZettlrCommand {
+export default class DirNewProject extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'dir-new-project')
   }

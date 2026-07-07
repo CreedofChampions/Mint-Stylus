@@ -12,7 +12,7 @@
  * END HEADER
  */
 
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import { getCustomProfiles, makeExport } from './exporter'
 import { shell, dialog } from 'electron'
 import type { ExporterOptions } from './exporter/types'
@@ -36,7 +36,7 @@ function pathToWin (pathFragment: string): string {
   return pathFragment.replace(/\//g, '\\')
 }
 
-export default class DirProjectExport extends ZettlrCommand {
+export default class DirProjectExport extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'dir-project-export')
   }

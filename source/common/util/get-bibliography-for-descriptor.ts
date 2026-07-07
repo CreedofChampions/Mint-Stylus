@@ -32,7 +32,7 @@ export function getBibliographyForDescriptor (descriptor: MDFileDescriptor): str
     library = descriptor.frontmatter.bibliography
 
     if (Array.isArray(library)) {
-      // While multiple bibliography libraries are supported by Pandoc, Zettlr
+      // While multiple bibliography libraries are supported by Pandoc, Mint Stylus
       // cannot properly merge multiple libraries together, so we'll simply use
       // the first found.
       library = library[0]

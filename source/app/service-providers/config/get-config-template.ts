@@ -202,13 +202,13 @@ export interface ConfigOptions {
   }
   files: {
     // Built-in files cannot be shown in the sidebar, will always be shown in
-    // the file manager, and will always be opened with Zettlr.
+    // the file manager, and will always be opened with Mint Stylus.
     builtin: FileTypeSettings<true, false, 'zettlr'>
     // Images and PDFs can be entirely hidden or shown everywhere, and opened
-    // with the system default, or in Zettlr
+    // with the system default, or in Mint Stylus
     images: FileTypeSettings
     pdf: FileTypeSettings
-    // These file types can be shown anywhere, but are not open-able by Zettlr.
+    // These file types can be shown anywhere, but are not open-able by Mint Stylus.
     msoffice: FileTypeSettings<boolean, boolean, 'system'>
     openOffice: FileTypeSettings<boolean, boolean, 'system'>
     dataFiles: FileTypeSettings<boolean, boolean, 'system'>
@@ -301,7 +301,7 @@ export function getConfigTemplate (): ConfigOptions {
     },
     window: {
       // Only use native window appearance by default on macOS. If this value
-      // is false, this means that Zettlr will display the menu bar and window
+      // is false, this means that Mint Stylus will display the menu bar and window
       // controls as defined in the HTML.
       nativeAppearance: process.platform === 'darwin', // Linux only
       vibrancy: false,
@@ -335,7 +335,7 @@ export function getConfigTemplate (): ConfigOptions {
     // UI related options
     darkMode: nativeTheme.shouldUseDarkColors,
     darkModeEditor: 'match', // Possible values: 'match', 'light', 'dark'
-    alwaysReloadFiles: true, // Should Zettlr automatically load remote changes?
+    alwaysReloadFiles: true, // Should Mint Stylus automatically load remote changes?
     autoDarkMode: 'system', // Possible values: 'off', 'system', 'schedule', 'auto'
     autoDarkModeStart: '21:00', // Switch into dark mode at this time
     autoDarkModeEnd: '06:00', // Switch to light mode at this time
@@ -350,7 +350,7 @@ export function getConfigTemplate (): ConfigOptions {
     fileNameDisplay: 'title+heading', // Controls what info is displayed as filenames
     fileManager: {
       twoStepCollapseWorkspaces: false,
-      sortWorkspacesManually: false // By default, let Zettlr sort workspaces
+      sortWorkspacesManually: false // By default, let Mint Stylus sort workspaces
     },
     newFileNamePattern: '%id.md',
     newFileDontPrompt: false, // If true immediately creates files

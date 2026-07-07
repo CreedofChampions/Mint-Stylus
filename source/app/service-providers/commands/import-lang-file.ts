@@ -12,7 +12,7 @@
  * END HEADER
  */
 
-import ZettlrCommand from './zettlr-command'
+import AppCommand from './app-command'
 import path from 'path'
 import fs from 'fs'
 import * as bcp47 from 'bcp-47'
@@ -21,7 +21,7 @@ import { app } from 'electron'
 import { showNativeNotification } from '@common/util/show-notification'
 import type { AppServiceContainer } from 'source/app/app-service-container'
 
-export default class ImportLangFile extends ZettlrCommand {
+export default class ImportLangFile extends AppCommand {
   constructor (app: AppServiceContainer) {
     super(app, 'import-lang-file')
   }

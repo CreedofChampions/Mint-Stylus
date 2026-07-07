@@ -44,7 +44,7 @@ export type OnboardingIPCMessage = OnboardingIPCCloseMessage |
   OnboardingIPCSetAppLangMessage
 
 /**
- * Shows the onboarding window for Zettlr. This function will block until the
+ * Shows the onboarding window for Mint Stylus. This function will block until the
  * window is closed.
  *
  * @param   {LogProvider}  logger  The logger for potential error messages.

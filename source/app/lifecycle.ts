@@ -49,7 +49,7 @@ export async function bootApplication (): Promise<AppServiceContainer> {
   const config = appServiceContainer.config
   const log = appServiceContainer.log
 
-  log.info(`こんにちは！ Booting Zettlr at ${(new Date()).toString()}.`)
+  log.info(`こんにちは！ Booting Mint Stylus at ${(new Date()).toString()}.`)
 
   // Before we begin, let's load the Vue.js DevTools for debugging
   if (!app.isPackaged) {
@@ -129,7 +129,7 @@ export async function shutdownApplication (): Promise<void> {
   log.info(`Application uptime was: ${uptimeMessage}.`)
 
   if (span.days > 0 || span.weeks > 0) {
-    log.warning('Zettlr has run for more than one day. Please make sure to regularly reboot your computer.')
+    log.warning('Mint Stylus has run for more than one day. Please make sure to regularly reboot your computer.')
   }
 
   await appServiceContainer.shutdown()

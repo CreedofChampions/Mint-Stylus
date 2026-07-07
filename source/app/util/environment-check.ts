@@ -40,7 +40,7 @@ export default async function environmentCheck (): Promise<void> {
 
   /**
    * Required directories that must exist on the system in order for certain
-   * functionality to work and not bring down Zettlr to its knees on startup.
+   * functionality to work and not bring down Mint Stylus to its knees on startup.
    *
    * @var {string[]}
    */
@@ -66,7 +66,7 @@ export default async function environmentCheck (): Promise<void> {
   if (!winARM && !macARM && !is64Bit && !isLinux && !linuxARM) {
     // We support: Windows ARM and macOS ARM
     // and anything 64bit. Warn for everything else.
-    console.warn(`[Application] Your platform/arch (${process.platform}/${process.arch}) combination is not officially supported. Zettlr might not function correctly.`)
+    console.warn(`[Application] Your platform/arch (${process.platform}/${process.arch}) combination is not officially supported. Mint Stylus might not function correctly.`)
   }
 
   // We need to check if Pandoc has been bundled with this package.
@@ -163,7 +163,7 @@ export default async function environmentCheck (): Promise<void> {
   process.env.UPDATES_DISABLED = __UPDATES_DISABLED__
 
   if (__UPDATES_DISABLED__ === '1') {
-    console.warn('This Zettlr binary has been compiled with update checks completely disabled.')
+    console.warn('This Mint Stylus binary has been compiled with update checks completely disabled.')
   }
 
   console.log('[Application] Environment check complete.')

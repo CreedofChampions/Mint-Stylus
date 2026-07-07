@@ -31,8 +31,8 @@ export interface Stats {
 }
 
 /**
- * ZettlrStats works like the ZettlrConfig object, only with a different file.
- * ZettlrStats monitors how the user uses Zettlr and should in the future be
+ * StatsProvider works like the config object, only with a different file.
+ * StatsProvider monitors how the user uses Mint Stylus and should in the future be
  * able to present the user some nice looking statistics on his own behavior.
  * (In case anyone is worried: No, there will be no transmission of stats to
  * anyone.)
@@ -44,7 +44,7 @@ export default class StatsProvider extends ProviderContract {
 
   /**
    * Preset sane defaults and load an existing stats file if present
-   * @param {Zettlr} parent The main zettlr object.
+   * @param {Mint Stylus} parent The main Mint Stylus object.
    */
   constructor (private readonly _logger: LogProvider) {
     super()
@@ -129,7 +129,7 @@ export default class StatsProvider extends ProviderContract {
         }
       }
     } catch (err: any) {
-      // If getting the data throws an error, we must not prevent Zettlr from
+      // If getting the data throws an error, we must not prevent Mint Stylus from
       // starting. In this case, we'll init the container with our default data
       // and move the malformed file. See #6127 for context.
       const newPath = await disambiguateFile(this.statsFile)
@@ -173,7 +173,7 @@ export default class StatsProvider extends ProviderContract {
 
   /**
    * Increases the pomodoros by one
-   * @return {ZettlrStats} This for chainability.
+   * @return {MintStylusStats} This for chainability.
    */
   increasePomodoros (): void {
     const todayISO = today()

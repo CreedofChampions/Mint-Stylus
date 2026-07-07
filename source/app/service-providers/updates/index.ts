@@ -439,14 +439,14 @@ export default class UpdateProvider extends ProviderContract {
       throw error
     }
   
-    // We have one issue (#5429), namely that Zettlr follows the convention to
+    // We have one issue (#5429), namely that Mint Stylus follows the convention to
     // declare nightlies using the SAME major/minor/patch as the current stable
     // release with "-nightly" appended to it. However, under strict SemVer
     // rules, this makes the nightlies a *prerelease* (and not a ...
     // "postrelease"...? I don't think this term exists). Here we have to do a
     // bit of manual engineering to account for this edge case.
 
-    // NOTE: Zettlr makes use of major, minor, and patch versions, plus "betas"
+    // NOTE: Mint Stylus makes use of major, minor, and patch versions, plus "betas"
     // (beta, beta.1, beta.2, etc.), and as build-identifiers "nightly".
     // This ensures that `semver.lt` will always work properly, indicating that
     // nightlies will never attempt to update to the same-but-older version:

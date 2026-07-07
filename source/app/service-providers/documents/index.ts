@@ -810,7 +810,7 @@ current contents from the editor somewhere else, and restart the application.`
       throw new Error(`Could not open file ${filePath}: Not an existing file.`)
     }
 
-    // Check if we can, and should, actually open the file in Zettlr. If not, we
+    // Check if we can, and should, actually open the file in Mint Stylus. If not, we
     // need to open it via the shell externally. NOTE: This check is, to varying
     // degrees, implemented at the sources of opening-requests (read: mostly in
     // the renderers). If you see this comment, and spot a place where we
@@ -941,7 +941,7 @@ current contents from the editor somewhere else, and restart the application.`
     // If we were to completely remove the file from our buffer, we have to ask
     // first. If there's at least another instance open that means that we won't
     // lose the file. NOTE: openFile will be undefined if the file has not been
-    // opened in this session of Zettlr, hence it will not be modified, hence we
+    // opened in this session of Mint Stylus, hence it will not be modified, hence we
     // don't have to do anything.
     const openFile = this.documents.find(doc => doc.filePath === filePath)
     if (openFile !== undefined && this.isModified(filePath) && numOpenInstances === 1) {
@@ -1549,7 +1549,7 @@ current contents from the editor somewhere else, and restart the application.`
     // 3. The user adds more changes
     // 4. The save finishes and undos the modifications
 
-    // NOTE: Zettlr internally always uses regular LF linefeeds. The FSAL load
+    // NOTE: Mint Stylus internally always uses regular LF linefeeds. The FSAL load
     // and FSAL save methods will take care to actually use the proper linefeeds
     // and BOMs. So here we will always use newlines. This should fix and in the
     // future prevent bugs like #4959
