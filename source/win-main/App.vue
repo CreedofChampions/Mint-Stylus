@@ -64,6 +64,7 @@
               <option value="none">{{ trans('None') }}</option>
               <option value="folder">{{ trans('Folder') }}</option>
               <option value="mcp">{{ trans('MCP') }}</option>
+              <option value="both">{{ trans('Both') }}</option>
             </select>
           </label>
           <label
@@ -766,7 +767,10 @@ const contextTitle = computed<string>(() => {
       ? trans('Context: querying your MCP server (%s). Change it in Preferences → AI.', url)
       : trans('Context: add an MCP server URL in Preferences → AI to pull context from.')
   }
-  return trans('Context: pick a local folder group or an MCP server to give the AI extra context on every request.')
+  if (value === 'both') {
+    return trans('Context: using BOTH your folder group and your MCP server. Configure them in Preferences → AI.')
+  }
+  return trans('Context: pick a folder group, an MCP server, or both to give the AI extra context on every request.')
 })
 
 /**
@@ -806,7 +810,7 @@ function handleContextSelection (source: string): void {
   }
 
   if (source === 'mcp') {
-    const existing = String(configStore.config.ai.contextMcpUrl ?? '')
+    const existing = String(window.config.get('ai.contextMcpUrl') ?? '')
     if (existing === '') {
       // No URL yet — route to the Preferences Context panel (which has a proper
       // URL field + Test). window.prompt throws under Electron, so never use it.
@@ -815,6 +819,29 @@ function handleContextSelection (source: string): void {
       return
     }
     configStore.setConfigValue('ai.contextSource', 'mcp')
+    return
+  }
+
+  if (source === 'both') {
+    // 'Both' uses whatever is configured; the main process degrades gracefully to
+    // the source(s) that exist. Turn it on, then help fill in a missing half:
+    // if there's no folder, open the picker; if nothing is configured at all,
+    // open Preferences so the user can set up both sources there.
+    const folder = String(window.config.get('ai.contextFolder') ?? '')
+    const url = String(window.config.get('ai.contextMcpUrl') ?? '')
+    configStore.setConfigValue('ai.contextSource', 'both')
+    if (folder === '' && url === '') {
+      ipcRenderer.invoke('application', { command: 'open-preferences' })
+        .catch(e => console.error(e))
+    } else if (folder === '') {
+      window.ai.pickContextFolder()
+        .then(folderPath => {
+          if (folderPath !== '') {
+            configStore.setConfigValue('ai.contextFolder', folderPath)
+          }
+        })
+        .catch(err => console.error('Folder pick failed', err))
+    }
     return
   }
 
