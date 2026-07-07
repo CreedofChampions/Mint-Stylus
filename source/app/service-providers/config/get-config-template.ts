@@ -247,9 +247,10 @@ export interface ConfigOptions {
     // DEFAULT via defaultAICommands() in @providers/ai/ai-commands.
     commands: AICommandConfig[]
     // Extra context injected into every AI request. 'none' = off; 'folder' =
-    // grep the selected local folder group; 'mcp' = query the MCP server URL.
-    // Auto-switches on when a folder is picked or an MCP URL is entered.
-    contextSource: 'none'|'folder'|'mcp'
+    // grep the selected local folder group; 'mcp' = query the MCP server URL;
+    // 'both' = use the folder AND the MCP server together. Auto-switches on when
+    // a folder is picked or an MCP URL is entered.
+    contextSource: 'none'|'folder'|'mcp'|'both'
     contextFolder: string
     contextMcpUrl: string
   }

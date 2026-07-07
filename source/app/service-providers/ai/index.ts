@@ -873,7 +873,7 @@ export default class AIProvider extends ProviderContract {
    */
   private async _maybeBuildContextSource (messages: ChatMessage[]): Promise<ChatMessage | undefined> {
     const source = this._readConfig<string>('ai.contextSource') ?? 'none'
-    if (source !== 'folder' && source !== 'mcp') {
+    if (source !== 'folder' && source !== 'mcp' && source !== 'both') {
       return undefined
     }
 
@@ -887,21 +887,32 @@ export default class AIProvider extends ProviderContract {
       // Hard ceiling so a slow folder/MCP source can never block a chat forever.
       // Whichever resolves first wins; on timeout we simply skip the context.
       const CONTEXT_BUILD_TIMEOUT_MS = 25000
-      let build: Promise<{ block: string }>
-      if (source === 'folder') {
-        const folder = this._readConfig<string>('ai.contextFolder') ?? ''
-        build = buildFolderContext(folder, query)
-      } else {
-        const url = this._readConfig<string>('ai.contextMcpUrl') ?? ''
-        if (url.trim() === '') {
-          return undefined
-        }
-        build = buildMcpContext(url.trim(), query)
+      const folder = (this._readConfig<string>('ai.contextFolder') ?? '').trim()
+      const url = (this._readConfig<string>('ai.contextMcpUrl') ?? '').trim()
+
+      // 'both' uses whatever is configured; 'folder'/'mcp' use only their own.
+      // The two sources build in PARALLEL and their blocks are concatenated.
+      const builders: Array<Promise<{ block: string }>> = []
+      if ((source === 'folder' || source === 'both') && folder !== '') {
+        builders.push(buildFolderContext(folder, query))
       }
+      if ((source === 'mcp' || source === 'both') && url !== '') {
+        builders.push(buildMcpContext(url, query))
+      }
+      if (builders.length === 0) {
+        return undefined
+      }
+
+      const combined = Promise.all(builders).then(results => ({
+        block: results
+          .map(r => r.block)
+          .filter(b => b.trim().length > 0)
+          .join('\n\n')
+      }))
       const timeout = new Promise<{ block: string }>(resolve => {
         setTimeout(() => resolve({ block: '' }), CONTEXT_BUILD_TIMEOUT_MS)
       })
-      const { block } = await Promise.race([ build, timeout ])
+      const { block } = await Promise.race([ combined, timeout ])
       return block.trim().length > 0 ? { role: 'system', content: block } : undefined
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)

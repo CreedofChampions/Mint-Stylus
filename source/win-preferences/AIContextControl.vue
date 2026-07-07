@@ -44,6 +44,7 @@
       <option value="none">{{ trans('None (off)') }}</option>
       <option value="folder">{{ trans('Folder group') }}</option>
       <option value="mcp">{{ trans('MCP server') }}</option>
+      <option value="both">{{ trans('Both (folder + MCP)') }}</option>
     </select>
 
     <p v-if="status !== ''" class="ai-context-status">{{ status }}</p>

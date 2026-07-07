@@ -49,7 +49,7 @@ const RULES = {
   'ai.searchProvider': 'required|string|in:tavily,brave,none|default:tavily',
   'ai.styleFilePath': 'optional|string|default:',
   'ai.thinkingLevel': 'required|string|in:off,low,medium,high|default:off',
-  'ai.contextSource': 'required|string|in:none,folder,mcp|default:none',
+  'ai.contextSource': 'required|string|in:none,folder,mcp,both|default:none',
   'ai.contextFolder': 'optional|string|default:',
   'ai.contextMcpUrl': 'optional|string|default:'
 }
