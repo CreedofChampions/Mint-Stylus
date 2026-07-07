@@ -26,6 +26,7 @@ import { type PreferencesFieldset } from '../App.vue'
 import { PreferencesGroups } from './_preferences-groups'
 import AIProviderControl from '../AIProviderControl.vue'
 import AICommandsControl from '../AICommandsControl.vue'
+import AIContextControl from '../AIContextControl.vue'
 
 /**
  * Prompts for an API key and stores it (encrypted, in main) for the given
@@ -105,6 +106,18 @@ export function getAIFields (): PreferencesFieldset[] {
             medium: trans('Medium'),
             high: trans('High')
           }
+        }
+      ]
+    },
+    {
+      title: trans('Context source'),
+      group: PreferencesGroups.AI,
+      infoString: trans('Plug a local folder group or an MCP server in as extra context for every AI request. It turns on automatically once set, and you can switch it with the "Context:" dropdown at the top of the editor.'),
+      help: undefined,
+      fields: [
+        {
+          type: 'custom',
+          component: AIContextControl
         }
       ]
     },

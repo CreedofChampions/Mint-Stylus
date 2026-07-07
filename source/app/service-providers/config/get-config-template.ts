@@ -246,6 +246,12 @@ export interface ConfigOptions {
     // Each carries an editable prompt and a `flow` (summarize|stream). See
     // DEFAULT via defaultAICommands() in @providers/ai/ai-commands.
     commands: AICommandConfig[]
+    // Extra context injected into every AI request. 'none' = off; 'folder' =
+    // grep the selected local folder group; 'mcp' = query the MCP server URL.
+    // Auto-switches on when a folder is picked or an MCP URL is entered.
+    contextSource: 'none'|'folder'|'mcp'
+    contextFolder: string
+    contextMcpUrl: string
   }
   ui: {
     fileManagerSplitSize: [number, number]
@@ -336,7 +342,12 @@ export function getConfigTemplate (): ConfigOptions {
       thinkingLevel: 'off', // off|low|medium|high — global reasoning effort
       // The editable AI command set. Seeded with the five built-ins; the user
       // can rename/rewrite/re-flow them, add new commands, and reset built-ins.
-      commands: defaultAICommands()
+      commands: defaultAICommands(),
+      // Extra-context source for AI requests. Off by default; flips on to
+      // 'folder'/'mcp' the moment the user picks a folder or enters an MCP URL.
+      contextSource: 'none', // none|folder|mcp
+      contextFolder: '', // absolute path to a local folder group
+      contextMcpUrl: '' // MCP server URL (Streamable HTTP)
     },
     // Visible attachment filetypes
     attachmentExtensions: [],

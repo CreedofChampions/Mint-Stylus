@@ -26,7 +26,7 @@
 
 import path from 'path'
 import { promises as fs } from 'fs'
-import { app, ipcMain, safeStorage } from 'electron'
+import { app, ipcMain, safeStorage, dialog } from 'electron'
 import type { IpcMainInvokeEvent } from 'electron'
 import ProviderContract from '../provider-contract'
 import type { IPCAPI } from '../provider-contract'
@@ -40,6 +40,8 @@ import {
   type ChatMessage
 } from './openai-client'
 import { runSearch, type SearchProvider as WebSearchProvider } from './search'
+import { buildFolderContext } from './context-folder'
+import { buildMcpContext } from './context-mcp'
 import { buildMessages } from './prompts'
 import { DEFAULT_PROVIDER, getProviderInfo } from '@common/util/ai-providers'
 
@@ -158,6 +160,8 @@ export type AIProviderIPCAPI = IPCAPI<{
   }
   'cancel': { id: string }
   'search': { provider?: WebSearchProvider, query: string }
+  'pick-context-folder': unknown
+  'test-context': { source: string, folder?: string, url?: string }
   'save-key': { provider: string, key: string }
   'has-key': { provider: string }
   'delete-key': { provider: string }
@@ -306,6 +310,10 @@ export default class AIProvider extends ProviderContract {
         return this._cancel(payload.payload.id)
       case 'search':
         return await this._search(payload.payload)
+      case 'pick-context-folder':
+        return await this._pickContextFolder()
+      case 'test-context':
+        return await this._testContext(payload.payload)
       case 'save-key':
         return await this._saveKey(payload.payload.provider, payload.payload.key)
       case 'has-key':
@@ -650,7 +658,12 @@ export default class AIProvider extends ProviderContract {
     const searchContext = await this._maybeBuildSearchContext(conversation)
     const searchSystem = searchContext !== undefined ? [ searchContext ] : []
 
-    return [ ...preambleSystem, ...searchSystem, ...earlierTurns, ...finalUser ]
+    // Inject the selected extra-context source (a local folder group or an MCP
+    // server) as a system message. Off (source 'none') → nothing. Never throws.
+    const extraContext = await this._maybeBuildContextSource(conversation)
+    const contextSystem = extraContext !== undefined ? [ extraContext ] : []
+
+    return [ ...preambleSystem, ...contextSystem, ...searchSystem, ...earlierTurns, ...finalUser ]
   }
 
   /**
@@ -846,6 +859,95 @@ export default class AIProvider extends ProviderContract {
       apiKey,
       query: payload.query
     })
+  }
+
+  // ==========================================================================
+  // Extra-context source (local folder group / MCP server)
+  // ==========================================================================
+
+  /**
+   * If a context source is configured (ai.contextSource !== 'none'), build a
+   * RAG block for the latest user turn from that source and return it as a
+   * ready-to-inject system message. Never throws: a source error becomes a short
+   * "(context unavailable)" note so the chat still completes.
+   */
+  private async _maybeBuildContextSource (messages: ChatMessage[]): Promise<ChatMessage | undefined> {
+    const source = this._readConfig<string>('ai.contextSource') ?? 'none'
+    if (source !== 'folder' && source !== 'mcp') {
+      return undefined
+    }
+
+    const lastUser = [ ...messages ].reverse().find(m => m.role === 'user')
+    const query = typeof lastUser?.content === 'string' ? lastUser.content.trim() : ''
+    if (query.length === 0) {
+      return undefined
+    }
+
+    try {
+      if (source === 'folder') {
+        const folder = this._readConfig<string>('ai.contextFolder') ?? ''
+        const { block } = await buildFolderContext(folder, query)
+        return block.trim().length > 0 ? { role: 'system', content: block } : undefined
+      } else {
+        const url = this._readConfig<string>('ai.contextMcpUrl') ?? ''
+        if (url.trim() === '') {
+          return undefined
+        }
+        const { block } = await buildMcpContext(url.trim(), query)
+        return block.trim().length > 0 ? { role: 'system', content: block } : undefined
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      this._logger.warning(`[AIProvider] Context source (${source}) failed; continuing without it: ${message}`)
+      return {
+        role: 'system',
+        content: `(the configured ${source} context source was unavailable this turn; answer from what you have.)`
+      }
+    }
+  }
+
+  /**
+   * Opens a native folder picker and returns the chosen absolute path (or '' if
+   * the user cancelled). Used by the Context dropdown / preferences to plug in a
+   * local folder group.
+   */
+  private async _pickContextFolder (): Promise<string> {
+    try {
+      const result = await dialog.showOpenDialog({
+        title: 'Choose a folder to use as AI context',
+        properties: [ 'openDirectory' ]
+      })
+      if (result.canceled || result.filePaths.length === 0) {
+        return ''
+      }
+      return result.filePaths[0]
+    } catch (err: unknown) {
+      this._logger.error('[AIProvider] Folder picker failed', err)
+      return ''
+    }
+  }
+
+  /**
+   * Probes a context source and returns a short human status (for the "Test"
+   * button in preferences). Never throws.
+   */
+  private async _testContext (payload: { source: string, folder?: string, url?: string }): Promise<string> {
+    try {
+      if (payload.source === 'folder') {
+        const { info } = await buildFolderContext(payload.folder ?? '', 'test', { maxFiles: 1 })
+        return info
+      } else if (payload.source === 'mcp') {
+        const url = (payload.url ?? '').trim()
+        if (url === '') {
+          return 'Enter an MCP server URL first.'
+        }
+        const { info } = await buildMcpContext(url, 'test connection', { maxChars: 200 })
+        return info
+      }
+      return 'No context source selected.'
+    } catch (err: unknown) {
+      return `Test failed: ${err instanceof Error ? err.message : String(err)}`
+    }
   }
 
   // ==========================================================================

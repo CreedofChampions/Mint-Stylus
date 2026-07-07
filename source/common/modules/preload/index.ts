@@ -249,6 +249,22 @@ contextBridge.exposeInMainWorld('ai', {
     return result !== null && result !== undefined ? JSON.stringify(result) : ''
   },
   /**
+   * Opens a native folder picker in main and resolves with the chosen absolute
+   * path (or '' if cancelled). Used to plug a local folder group in as context.
+   */
+  pickContextFolder: async (): Promise<string> => {
+    const result = await invokeAI({ command: 'pick-context-folder', payload: undefined })
+    return typeof result === 'string' ? result : ''
+  },
+  /**
+   * Probes a context source (folder or MCP URL) and resolves with a short human
+   * status string for the preferences "Test" button.
+   */
+  testContext: async (payload: { source: string, folder?: string, url?: string }): Promise<string> => {
+    const result = await invokeAI({ command: 'test-context', payload })
+    return typeof result === 'string' ? result : ''
+  },
+  /**
    * Reads the current "Write in My Style" precursor text.
    */
   getStyle: async (): Promise<string> => {
