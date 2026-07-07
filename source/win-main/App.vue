@@ -60,7 +60,7 @@
             v-bind:title="contextTitle"
           >
             <span class="ai-thinking-level-label">{{ trans('Context:') }}</span>
-            <select v-model="contextSource" v-on:change="onContextSourceChange">
+            <select v-model="contextSource">
               <option value="none">{{ trans('None') }}</option>
               <option value="folder">{{ trans('Folder') }}</option>
               <option value="mcp">{{ trans('MCP') }}</option>
@@ -71,7 +71,7 @@
             v-bind:title="trans('Thinking level: how much reasoning effort the AI spends on every request (all AI features)')"
           >
             <span class="ai-thinking-level-label">{{ trans('Thinking:') }}</span>
-            <select v-model="thinkingLevel" v-on:change="setThinkingLevel">
+            <select v-model="thinkingLevel">
               <option value="off">{{ trans('Off') }}</option>
               <option value="low">{{ trans('Low') }}</option>
               <option value="medium">{{ trans('Medium') }}</option>
@@ -732,92 +732,93 @@ watch(mainSplitViewVisibleComponent, (newValue) => {
 const pendingSummarizeSelection = ref<AISelection|null>(null)
 
 // AI-CREATED FOR MINT STYLUS: the GLOBAL thinking-level (reasoning effort)
-// selector shown top-right of the question-bar row. Read once on mount from the
-// config (same synchronous window.config bridge AIProviderControl.vue uses) and
-// written back on change. The main-process AIProvider reads ai.thinkingLevel on
-// EVERY request, so all AI features pick the new level up immediately.
-const thinkingLevel = ref<string>(String(window.config.get('ai.thinkingLevel') ?? 'off'))
-
-/**
- * Persists the chosen thinking level to the global config.
- */
-function setThinkingLevel (): void {
-  window.config.set('ai.thinkingLevel', thinkingLevel.value)
-}
+// selector shown top-right of the question-bar row. Backed by the reactive
+// config store so it stays correct even if the value is changed from another
+// window (e.g. Preferences). The main-process AIProvider reads ai.thinkingLevel
+// on EVERY request, so all AI features pick the new level up immediately.
+const thinkingLevel = computed<string>({
+  get: () => String(configStore.config.ai.thinkingLevel ?? 'off'),
+  set: (value: string) => { configStore.setConfigValue('ai.thinkingLevel', value) }
+})
 
 // AI-CREATED FOR MINT STYLUS: the GLOBAL context-source selector (top-right,
-// next to Thinking). 'none' | 'folder' | 'mcp'. Selecting Folder/MCP with
-// nothing configured immediately lets the user plug it in (a folder picker or a
-// URL prompt) and turns context ON; the main-process AIProvider reads
-// ai.contextSource on every request and injects the folder/MCP context.
-const contextSource = ref<string>(String(window.config.get('ai.contextSource') ?? 'none'))
+// next to Thinking). 'none' | 'folder' | 'mcp'. Backed by the reactive config
+// store, so it reflects the active source even when changed from Preferences and
+// so it AUTO-REVERTS when the user cancels a pick (the dropdown always mirrors
+// what is actually configured). The main-process AIProvider reads ai.contextSource
+// on every request and injects the folder/MCP context.
+const contextSource = computed<string>({
+  get: () => String(configStore.config.ai.contextSource ?? 'none'),
+  set: (value: string) => { handleContextSelection(value) }
+})
 
 const contextTitle = computed<string>(() => {
-  if (contextSource.value === 'folder') {
-    const folder = String(window.config.get('ai.contextFolder') ?? '')
+  const value = contextSource.value
+  if (value === 'folder') {
+    const folder = String(configStore.config.ai.contextFolder ?? '')
     return folder !== ''
       ? trans('Context: pulling from your folder group (%s). Change it in Preferences → AI.', folder)
       : trans('Context: choose a local folder group to pull context from.')
   }
-  if (contextSource.value === 'mcp') {
-    const url = String(window.config.get('ai.contextMcpUrl') ?? '')
+  if (value === 'mcp') {
+    const url = String(configStore.config.ai.contextMcpUrl ?? '')
     return url !== ''
       ? trans('Context: querying your MCP server (%s). Change it in Preferences → AI.', url)
-      : trans('Context: enter an MCP server URL to pull context from.')
+      : trans('Context: add an MCP server URL in Preferences → AI to pull context from.')
   }
   return trans('Context: pick a local folder group or an MCP server to give the AI extra context on every request.')
 })
 
 /**
- * Handles a change of the context-source dropdown. Picking Folder/MCP with
- * nothing configured yet immediately lets the user plug it in (folder picker /
- * URL prompt) and, on success, leaves context ON. Cancelling with nothing
- * previously configured reverts the dropdown to None so it never claims to be on
- * without a source.
+ * Handles a change of the context-source dropdown. Because the dropdown is bound
+ * to the reactive config, doing nothing here (e.g. on cancel) leaves the select
+ * showing whatever is actually configured — it auto-reverts.
+ *
+ *  - Folder with nothing configured → open the native folder picker; on success
+ *    store the folder and turn the folder source ON.
+ *  - MCP with nothing configured → open Preferences → AI (window.prompt is not
+ *    available in Electron); entering a URL there turns MCP on and this dropdown
+ *    re-syncs automatically.
+ *  - An already-configured source, or None → just switch.
+ *
+ * @param  {string}  source  The newly-selected source.
  */
-function onContextSourceChange (): void {
-  const source = contextSource.value
-
+function handleContextSelection (source: string): void {
   if (source === 'folder') {
+    // Use the synchronous config bridge for the existence check so it is always
+    // current (the reactive store can lag a set by up to ~50ms). The dropdown's
+    // displayed value stays bound to the reactive store for cross-window sync.
     const existing = String(window.config.get('ai.contextFolder') ?? '')
     if (existing === '') {
       window.ai.pickContextFolder()
         .then(folderPath => {
           if (folderPath !== '') {
-            window.config.set('ai.contextFolder', folderPath)
-            window.config.set('ai.contextSource', 'folder')
-          } else {
-            // Cancelled and nothing configured → don't pretend context is on.
-            contextSource.value = 'none'
-            window.config.set('ai.contextSource', 'none')
+            configStore.setConfigValue('ai.contextFolder', folderPath)
+            configStore.setConfigValue('ai.contextSource', 'folder')
           }
+          // Cancelled → change nothing; the dropdown mirrors config and reverts.
         })
-        .catch(err => { console.error('Folder pick failed', err); contextSource.value = 'none' })
+        .catch(err => console.error('Folder pick failed', err))
       return
     }
-    window.config.set('ai.contextSource', 'folder')
+    configStore.setConfigValue('ai.contextSource', 'folder')
     return
   }
 
   if (source === 'mcp') {
-    const existing = String(window.config.get('ai.contextMcpUrl') ?? '')
+    const existing = String(configStore.config.ai.contextMcpUrl ?? '')
     if (existing === '') {
-      const url = window.prompt(trans('Enter your MCP server URL (Streamable HTTP endpoint):'), 'http://localhost:3000/mcp')
-      const trimmed = (url ?? '').trim()
-      if (trimmed !== '') {
-        window.config.set('ai.contextMcpUrl', trimmed)
-        window.config.set('ai.contextSource', 'mcp')
-      } else {
-        contextSource.value = 'none'
-        window.config.set('ai.contextSource', 'none')
-      }
+      // No URL yet — route to the Preferences Context panel (which has a proper
+      // URL field + Test). window.prompt throws under Electron, so never use it.
+      ipcRenderer.invoke('application', { command: 'open-preferences' })
+        .catch(e => console.error(e))
       return
     }
-    window.config.set('ai.contextSource', 'mcp')
+    configStore.setConfigValue('ai.contextSource', 'mcp')
     return
   }
 
-  window.config.set('ai.contextSource', 'none')
+  configStore.setConfigValue('ai.contextSource', 'none')
 }
 
 const leftComponentBeforeAI = ref<'fileManager'|'globalSearch'>('fileManager')

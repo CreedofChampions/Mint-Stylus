@@ -41,9 +41,19 @@ export interface McpContextResult {
 // Default cap on the assembled block length (characters).
 const DEFAULT_MAX_CHARS = 6000
 
-// Per-request network timeout. MCP servers can hold a Streamable-HTTP response
-// open (SSE), so this is generous but still bounded so a Test button can fail.
-const REQUEST_TIMEOUT_MS = 15000
+// Per-request network timeout. Bounds a single round-trip. SSE replies are
+// read INCREMENTALLY (see readRpcMessage) so a server that legitimately holds
+// the event-stream open after answering does NOT burn this budget — we return
+// the moment the matching JSON-RPC message arrives.
+const REQUEST_TIMEOUT_MS = 10000
+
+// Total wall-clock budget for the ENTIRE buildMcpContext call. buildMcpContext
+// issues up to ~9 sequential requests (initialize, initialized, tools/list,
+// resources/list, up to 2 tools/call, up to 3 resources/read); a slow-but-
+// responsive server that answers each just under the per-request timeout could
+// otherwise stall the chat for minutes. One deadline computed at the top caps
+// the whole chain regardless of round-trip count.
+const TOTAL_BUDGET_MS = 25000
 
 // Cap on any single collected snippet before it is placed into the block, so
 // one huge tool/resource payload cannot dominate the whole context window.
@@ -102,22 +112,139 @@ interface McpResource {
 }
 
 /**
- * Build an AbortSignal that fires after REQUEST_TIMEOUT_MS, optionally combined
- * with a caller-supplied signal. Prefers AbortSignal.any (Node 20+/Electron 42)
- * so the caller's cancellation is honoured alongside the timeout; if that is
- * unavailable we degrade gracefully to the timeout alone.
+ * Build the AbortSignal for a single request. It fires on the FIRST of:
+ *   - the per-request timeout (REQUEST_TIMEOUT_MS),
+ *   - the shared total-budget deadline (`deadline`, computed once per
+ *     buildMcpContext call so the sum of sequential requests can never exceed
+ *     TOTAL_BUDGET_MS), and
+ *   - the caller-supplied `external` signal.
+ *
+ * Prefers AbortSignal.any (Node 20+/Electron 42) to combine them. If that is
+ * unavailable we degrade gracefully to the shared deadline alone (which is the
+ * one that bounds the whole call), or failing that the per-request timeout.
  */
-function requestSignal (external?: AbortSignal): AbortSignal {
-  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  if (external === undefined) {
-    return timeout
+function requestSignal (deadline: AbortSignal, external?: AbortSignal): AbortSignal {
+  const perRequest = AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+  const signals: AbortSignal[] = [ perRequest, deadline ]
+  if (external !== undefined) {
+    signals.push(external)
   }
   // AbortSignal.any is the clean combinator; guard in case the runtime lacks it.
   const anyFn = (AbortSignal as unknown as { any?: (signals: AbortSignal[]) => AbortSignal }).any
   if (typeof anyFn === 'function') {
-    return anyFn([ timeout, external ])
+    return anyFn(signals)
   }
-  return timeout
+  // Fallback: the shared deadline bounds the whole call, so prefer it.
+  return deadline
+}
+
+/**
+ * Parse one raw SSE event block into its concatenated `data:` payload (an event
+ * may carry several `data:` lines, joined by newlines). Returns '' if the event
+ * has no data lines.
+ */
+function sseEventData (rawEvent: string): string {
+  const dataLines: string[] = []
+  for (const line of rawEvent.split(/\r?\n/)) {
+    if (line.startsWith('data:')) {
+      dataLines.push(line.slice(5).replace(/^ /, ''))
+    }
+  }
+  return dataLines.join('\n').trim()
+}
+
+/**
+ * Try to interpret an SSE data payload as the JSON-RPC message we want.
+ * Returns { done: true, msg } to stop, { done: false, fallback } to keep
+ * scanning while remembering a response-shaped fallback.
+ */
+function matchSsePayload (
+  payload: string,
+  wantId: number
+): { done: true, msg: Record<string, JsonValue> } | { done: false, fallback?: Record<string, JsonValue> } {
+  if (payload.length === 0) {
+    return { done: false }
+  }
+  try {
+    const msg = JSON.parse(payload) as Record<string, JsonValue>
+    if (msg !== null && typeof msg === 'object') {
+      if (msg.id === wantId) {
+        return { done: true, msg }
+      }
+      // Remember any response-shaped message as a loose fallback for servers
+      // that echo a differently-typed id.
+      if ('result' in msg || 'error' in msg) {
+        return { done: false, fallback: msg }
+      }
+    }
+  } catch {
+    // Skip malformed SSE data payloads.
+  }
+  return { done: false }
+}
+
+/**
+ * Read a `text/event-stream` body INCREMENTALLY and return the JSON-RPC message
+ * matching `wantId` (or a response-shaped fallback) the instant it arrives.
+ *
+ * This is critical: a spec-compliant MCP Streamable-HTTP server may keep the
+ * event stream OPEN after emitting the JSON-RPC result (so it can later push
+ * server→client messages). Reading the whole body with res.text() would then
+ * block until the stream closes — burning the entire timeout even though the
+ * server answered in milliseconds. Instead we pull chunks from res.body,
+ * decode incrementally, split complete SSE events on a blank line as they
+ * arrive, and RETURN (cancelling the reader to release the socket) as soon as
+ * we have our message.
+ */
+async function readSseStream (
+  body: ReadableStream<Uint8Array>,
+  wantId: number
+): Promise<Record<string, JsonValue> | undefined> {
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let fallback: Record<string, JsonValue> | undefined
+
+  try {
+    for (;;) {
+      const { value, done } = await reader.read()
+      if (value !== undefined) {
+        buffer += decoder.decode(value, { stream: true })
+      }
+
+      // Drain every COMPLETE event (terminated by a blank line) currently in
+      // the buffer, keeping the trailing partial event for the next chunk.
+      let sep = buffer.search(/\r?\n\r?\n/)
+      while (sep !== -1) {
+        const rawEvent = buffer.slice(0, sep)
+        buffer = buffer.slice(sep).replace(/^\r?\n\r?\n/, '')
+        const result = matchSsePayload(sseEventData(rawEvent), wantId)
+        if (result.done) {
+          return result.msg
+        }
+        if (result.fallback !== undefined) {
+          fallback = result.fallback
+        }
+        sep = buffer.search(/\r?\n\r?\n/)
+      }
+
+      if (done) {
+        break
+      }
+    }
+
+    // Stream closed: try any trailing event that lacked a terminating blank
+    // line, then fall back.
+    const tail = matchSsePayload(sseEventData(buffer), wantId)
+    if (tail.done) {
+      return tail.msg
+    }
+    return tail.fallback ?? fallback
+  } finally {
+    // Release the socket. If the server is holding the stream open, this stops
+    // us waiting on it. cancel() can reject on an already-errored stream — ignore.
+    await reader.cancel().catch(() => undefined)
+  }
 }
 
 /**
@@ -125,55 +252,23 @@ function requestSignal (external?: AbortSignal): AbortSignal {
  * matches `wantId`.
  *
  * The transport permits two content types for a POST reply:
- *   - `application/json`  → the body is exactly one JSON-RPC object.
- *   - `text/event-stream` → Server-Sent Events; we scan every `data:` line,
- *     JSON-parse each payload and return the one whose `id` matches the request
- *     (a server may interleave notifications / server→client requests first).
+ *   - `application/json`  → the body is exactly one JSON-RPC object (the server
+ *     closes the response normally, so we read it whole).
+ *   - `text/event-stream` → Server-Sent Events; read INCREMENTALLY and return
+ *     as soon as the matching message arrives, because the server is allowed to
+ *     keep the stream open afterwards (see readSseStream).
  *
  * Returns the parsed JSON-RPC message object, or undefined if none matched.
  */
 async function readRpcMessage (res: Response, wantId: number): Promise<Record<string, JsonValue> | undefined> {
   const contentType = (res.headers.get('content-type') ?? '').toLowerCase()
-  const bodyText = await res.text()
 
-  if (contentType.includes('text/event-stream')) {
-    // SSE: collect `data:` payloads (which may span multiple lines per event)
-    // and pick the JSON-RPC message whose id matches ours.
-    let fallback: Record<string, JsonValue> | undefined
-    for (const rawEvent of bodyText.split(/\r?\n\r?\n/)) {
-      const dataLines: string[] = []
-      for (const line of rawEvent.split(/\r?\n/)) {
-        if (line.startsWith('data:')) {
-          dataLines.push(line.slice(5).replace(/^ /, ''))
-        }
-      }
-      if (dataLines.length === 0) {
-        continue
-      }
-      const payload = dataLines.join('\n').trim()
-      if (payload.length === 0) {
-        continue
-      }
-      try {
-        const msg = JSON.parse(payload) as Record<string, JsonValue>
-        if (msg !== null && typeof msg === 'object') {
-          if (msg.id === wantId) {
-            return msg
-          }
-          // Remember the last response-shaped message as a loose fallback for
-          // servers that echo a differently-typed id.
-          if ('result' in msg || 'error' in msg) {
-            fallback = msg
-          }
-        }
-      } catch {
-        // Skip malformed SSE data payloads.
-      }
-    }
-    return fallback
+  if (contentType.includes('text/event-stream') && res.body !== null) {
+    return readSseStream(res.body, wantId)
   }
 
-  // Default: a single JSON object body.
+  // Default: a single JSON object body. This closes normally, so read it whole.
+  const bodyText = await res.text()
   const trimmed = bodyText.trim()
   if (trimmed.length === 0) {
     return undefined
@@ -314,6 +409,11 @@ export async function buildMcpContext (
   const maxChars = opts?.maxChars ?? DEFAULT_MAX_CHARS
   const externalSignal = opts?.signal
 
+  // ONE deadline for the whole call, computed up front. Combined into every
+  // per-request signal so the sum of sequential (even slow-but-responsive)
+  // requests can never exceed TOTAL_BUDGET_MS regardless of round-trip count.
+  const deadline = AbortSignal.timeout(TOTAL_BUDGET_MS)
+
   // Captured from the initialize response header and echoed on every later
   // request per the Streamable HTTP session model.
   let sessionId: string | undefined
@@ -341,7 +441,7 @@ export async function buildMcpContext (
       method: 'POST',
       headers,
       body: JSON.stringify({ jsonrpc: '2.0', id, method, params }),
-      signal: requestSignal(externalSignal)
+      signal: requestSignal(deadline, externalSignal)
     })
 
     // Capture (or refresh) the session id from any response that carries it.
@@ -381,7 +481,7 @@ export async function buildMcpContext (
         method: 'POST',
         headers,
         body: JSON.stringify({ jsonrpc: '2.0', method, params }),
-        signal: requestSignal(externalSignal)
+        signal: requestSignal(deadline, externalSignal)
       })
       // Drain the body so the socket can be reused; ignore the content.
       await res.text().catch(() => '')
