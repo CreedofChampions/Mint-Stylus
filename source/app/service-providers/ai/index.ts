@@ -26,7 +26,7 @@
 
 import path from 'path'
 import { promises as fs } from 'fs'
-import { app, ipcMain, safeStorage, dialog } from 'electron'
+import { app, ipcMain, safeStorage, dialog, BrowserWindow } from 'electron'
 import type { IpcMainInvokeEvent } from 'electron'
 import ProviderContract from '../provider-contract'
 import type { IPCAPI } from '../provider-contract'
@@ -311,7 +311,7 @@ export default class AIProvider extends ProviderContract {
       case 'search':
         return await this._search(payload.payload)
       case 'pick-context-folder':
-        return await this._pickContextFolder()
+        return await this._pickContextFolder(event)
       case 'test-context':
         return await this._testContext(payload.payload)
       case 'save-key':
@@ -884,18 +884,25 @@ export default class AIProvider extends ProviderContract {
     }
 
     try {
+      // Hard ceiling so a slow folder/MCP source can never block a chat forever.
+      // Whichever resolves first wins; on timeout we simply skip the context.
+      const CONTEXT_BUILD_TIMEOUT_MS = 25000
+      let build: Promise<{ block: string }>
       if (source === 'folder') {
         const folder = this._readConfig<string>('ai.contextFolder') ?? ''
-        const { block } = await buildFolderContext(folder, query)
-        return block.trim().length > 0 ? { role: 'system', content: block } : undefined
+        build = buildFolderContext(folder, query)
       } else {
         const url = this._readConfig<string>('ai.contextMcpUrl') ?? ''
         if (url.trim() === '') {
           return undefined
         }
-        const { block } = await buildMcpContext(url.trim(), query)
-        return block.trim().length > 0 ? { role: 'system', content: block } : undefined
+        build = buildMcpContext(url.trim(), query)
       }
+      const timeout = new Promise<{ block: string }>(resolve => {
+        setTimeout(() => resolve({ block: '' }), CONTEXT_BUILD_TIMEOUT_MS)
+      })
+      const { block } = await Promise.race([ build, timeout ])
+      return block.trim().length > 0 ? { role: 'system', content: block } : undefined
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
       this._logger.warning(`[AIProvider] Context source (${source}) failed; continuing without it: ${message}`)
@@ -911,12 +918,19 @@ export default class AIProvider extends ProviderContract {
    * the user cancelled). Used by the Context dropdown / preferences to plug in a
    * local folder group.
    */
-  private async _pickContextFolder (): Promise<string> {
+  private async _pickContextFolder (event: IpcMainInvokeEvent): Promise<string> {
     try {
-      const result = await dialog.showOpenDialog({
+      const options = {
         title: 'Choose a folder to use as AI context',
-        properties: [ 'openDirectory' ]
-      })
+        properties: [ 'openDirectory' as const ]
+      }
+      // Attach the dialog to the calling window so it stays modal/foreground
+      // (a parent-less dialog can open behind the app window on Windows). Mirrors
+      // ask-directory.ts / ask-file.ts.
+      const win = BrowserWindow.fromWebContents(event.sender)
+      const result = win !== null
+        ? await dialog.showOpenDialog(win, options)
+        : await dialog.showOpenDialog(options)
       if (result.canceled || result.filePaths.length === 0) {
         return ''
       }

@@ -48,6 +48,41 @@ const IGNORED_DIRS = new Set([ '.git', 'node_modules', '.obsidian', '.trash', '.
 const PER_FILE_CHARS = 1400
 
 /**
+ * Never read more than this many bytes from any single file. A folder may
+ * contain huge exports/logs; reading them whole would spike (or exhaust) the
+ * main-process heap on every AI request. The first slice is more than enough to
+ * rank the file and cut a snippet.
+ */
+const MAX_FILE_BYTES = 256 * 1024
+
+/**
+ * Never read more than this many files while ranking, so a folder with thousands
+ * of notes cannot turn one request into a multi-hundred-MB read.
+ */
+const READ_LIMIT = 200
+
+/**
+ * Read at most `maxBytes` from the start of a file as UTF-8, without loading the
+ * whole file into memory. Used instead of fs.readFile so a giant file cannot OOM
+ * the process.
+ *
+ * @param   {string}  file      Absolute file path.
+ * @param   {number}  maxBytes  Maximum bytes to read.
+ *
+ * @return  {Promise<string>}   The decoded prefix (up to maxBytes).
+ */
+async function readTextBounded (file: string, maxBytes: number): Promise<string> {
+  const handle = await fs.open(file, 'r')
+  try {
+    const buffer = Buffer.alloc(maxBytes)
+    const { bytesRead } = await handle.read(buffer, 0, maxBytes, 0)
+    return buffer.subarray(0, bytesRead).toString('utf8')
+  } finally {
+    await handle.close()
+  }
+}
+
+/**
  * Recursively collect readable text files under `dir`, bounded by `limit`.
  *
  * @param   {string}    dir    The directory to walk.
@@ -172,12 +207,20 @@ export async function buildFolderContext (
 
   const tokens = tokenize(query)
 
-  // Score every file by keyword overlap; keep its best snippet.
+  // Score every file by keyword overlap; keep its best snippet. Each file is read
+  // with a hard byte cap (never the whole file) and we read at most READ_LIMIT
+  // files, so a folder of huge/countless notes cannot OOM or stall the process.
   const scored: Array<{ rel: string, snippet: string, hits: number }> = []
-  for (const file of files) {
+  for (const file of files.slice(0, READ_LIMIT)) {
     let content: string
     try {
-      content = await fs.readFile(file, 'utf8')
+      const st = await fs.stat(file)
+      if (st.size === 0) {
+        continue
+      }
+      content = st.size > MAX_FILE_BYTES
+        ? await readTextBounded(file, MAX_FILE_BYTES)
+        : await fs.readFile(file, 'utf8')
     } catch {
       continue
     }
