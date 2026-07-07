@@ -2,80 +2,116 @@
  * @ignore
  * BEGIN HEADER
  *
- * Contains:        detectQQSpans tester (Mint Stylus AI)
+ * Contains:        detectInlineQuerySpans tester (Mint Stylus AI)
  * CVM-Role:        TESTING
  * Maintainer:      Mint Stylus
  * License:         GNU GPL v3
  *
- * Description:     Tests the pure QQ-span detector used by the inline
- *                  "QQ <question> QQ" CodeMirror plugin. Given raw document
- *                  text, detectQQSpans returns one {from, to, question} record
- *                  per complete QQ...QQ span, where `from`/`to` are the absolute
- *                  character offsets bounding the whole span (opening QQ through
- *                  closing QQ, both markers included) and `question` is the
- *                  trimmed inner text. A lone unmatched "QQ" yields nothing.
+ * Description:     Tests the pure /q…q/ span detector used by the inline
+ *                  "/q <question> q/" CodeMirror plugin. Given raw document
+ *                  text, detectInlineQuerySpans returns one {from, to, question}
+ *                  record per complete /q...q/ span, where `from`/`to` are the
+ *                  absolute character offsets bounding the whole span (opening
+ *                  `/q` through closing `q/`, both markers included) and
+ *                  `question` is the trimmed inner text. A lone unmatched opener
+ *                  or closer yields nothing.
  *
  *                  <!-- AI-created for Mint Stylus -->
  *
  * END HEADER
  */
 
-import { detectQQSpans, type QQSpan } from 'source/common/modules/markdown-editor/plugins/qq-inline'
+import { detectInlineQuerySpans, type InlineQuerySpan } from 'source/common/modules/markdown-editor/plugins/qq-inline'
 import { deepStrictEqual, strictEqual } from 'assert'
 
-const tests: Array<{ desc: string, input: string, expected: QQSpan[] }> = [
+const tests: Array<{ desc: string, input: string, expected: InlineQuerySpan[] }> = [
   {
-    desc: 'no QQ span at all',
+    desc: 'no /q…q/ span at all',
     input: 'Just some ordinary text with no markers.',
     expected: []
   },
   {
-    desc: 'a lone unmatched QQ is ignored',
-    input: 'A dangling QQ marker with no closing pair.',
+    desc: 'a lone opener /q with no closer is ignored',
+    input: 'A dangling /q marker with no closing pair.',
     expected: []
   },
   {
-    desc: 'a single QQ ... QQ span',
-    // Offsets: "Ask QQ what is photosynthesis QQ now."
+    desc: 'a lone closer q/ with no opener is ignored',
+    input: 'A dangling q/ marker with no opening pair.',
+    expected: []
+  },
+  {
+    desc: 'a single /q … q/ span mid-sentence',
+    // Offsets: "Ask /q what is photosynthesis q/ now."
     //           0123456789...
-    // "Ask " = 4 chars, span starts at index 4, ends just after the closing QQ.
-    input: 'Ask QQ what is photosynthesis QQ now.',
+    // "Ask " = 4 chars, opener `/q` starts at index 4, span ends just after the
+    // closing `q/` at index 32.
+    input: 'Ask /q what is photosynthesis q/ now.',
     expected: [
       { from: 4, to: 32, question: 'what is photosynthesis' }
     ]
   },
   {
-    desc: 'two QQ ... QQ spans',
-    input: 'QQ first question QQ and then QQ second one QQ.',
+    desc: 'two /q … q/ spans',
+    // "/q a q/ /q b q/"
+    //  0123456 78...  — first span [0,7), second span [8,15)
+    input: '/q a q/ /q b q/',
     expected: [
-      { from: 0, to: 20, question: 'first question' },
-      { from: 30, to: 46, question: 'second one' }
+      { from: 0, to: 7, question: 'a' },
+      { from: 8, to: 15, question: 'b' }
+    ]
+  },
+  {
+    desc: 'an empty /q q/ span is ignored',
+    input: 'An empty /q q/ query is ignored.',
+    expected: []
+  },
+  {
+    desc: '/q/ (three chars) yields no span',
+    input: 'Edge /q/ case yields nothing.',
+    expected: []
+  },
+  {
+    desc: 'case-insensitive /Q … Q/ still matches',
+    // "Ask /Q upper q/ now." — opener `/Q` at index 4, closer `q/` at index 13.
+    input: 'Ask /Q upper q/ now.',
+    expected: [
+      { from: 4, to: 15, question: 'upper' }
     ]
   }
 ]
 
-describe('QQInline#detectQQSpans()', function () {
+describe('QQInline#detectInlineQuerySpans()', function () {
   for (const test of tests) {
     it(`should detect the right spans for: ${test.desc}`, function () {
-      deepStrictEqual(detectQQSpans(test.input), test.expected)
+      deepStrictEqual(detectInlineQuerySpans(test.input), test.expected)
     })
   }
 
   it('should return exact from/to slices that map back to the full span', function () {
-    const input = 'Ask QQ what is photosynthesis QQ now.'
-    const spans = detectQQSpans(input)
+    const input = 'Ask /q what is photosynthesis q/ now.'
+    const spans = detectInlineQuerySpans(input)
     strictEqual(spans.length, 1)
     const { from, to, question } = spans[0]
-    // The [from, to) slice must be the entire QQ...QQ span, markers included.
-    strictEqual(input.slice(from, to), 'QQ what is photosynthesis QQ')
+    // The [from, to) slice must be the entire /q…q/ span, markers included.
+    strictEqual(input.slice(from, to), '/q what is photosynthesis q/')
     // And the inner question must be the trimmed content between the markers.
     strictEqual(question, 'what is photosynthesis')
   })
 
-  it('should not treat a third lone QQ after a complete span as a new span', function () {
-    const input = 'QQ answer me QQ then a stray QQ'
-    const spans = detectQQSpans(input)
+  it('should not treat a trailing lone opener after a complete span as a new span', function () {
+    const input = '/q answer me q/ then a stray /q'
+    const spans = detectInlineQuerySpans(input)
     strictEqual(spans.length, 1)
     strictEqual(spans[0].question, 'answer me')
+  })
+
+  it('should keep correct offsets for two spans with surrounding text', function () {
+    const input = 'text /q first q/ mid /q second q/ end'
+    const spans = detectInlineQuerySpans(input)
+    deepStrictEqual(spans, [
+      { from: 5, to: 16, question: 'first' },
+      { from: 21, to: 33, question: 'second' }
+    ])
   })
 })

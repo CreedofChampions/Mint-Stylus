@@ -16,6 +16,7 @@ import { app, nativeTheme } from 'electron'
 import * as bcp47 from 'bcp-47'
 import { v4 as uuid4 } from 'uuid'
 import getLanguageFile from '@common/util/get-language-file'
+import { defaultAICommands, type AICommandConfig } from '@providers/ai/ai-commands'
 
 export type MarkdownTheme = 'berlin'|'frankfurt'|'bielefeld'|'karl-marx-stadt'|'bordeaux'
 
@@ -241,6 +242,10 @@ export interface ConfigOptions {
     // 'off' sends no reasoning fields at all; providers that don't support
     // reasoning ignore the field harmlessly.
     thinkingLevel: 'off'|'low'|'medium'|'high'
+    // The user-editable AI commands (the five built-ins plus any the user adds).
+    // Each carries an editable prompt and a `flow` (summarize|stream). See
+    // DEFAULT via defaultAICommands() in @providers/ai/ai-commands.
+    commands: AICommandConfig[]
   }
   ui: {
     fileManagerSplitSize: [number, number]
@@ -328,7 +333,10 @@ export function getConfigTemplate (): ConfigOptions {
       model: '',
       searchProvider: 'tavily', // tavily|brave|none
       styleFilePath: '', // Optional path to a user-provided style guide file
-      thinkingLevel: 'off' // off|low|medium|high — global reasoning effort
+      thinkingLevel: 'off', // off|low|medium|high — global reasoning effort
+      // The editable AI command set. Seeded with the five built-ins; the user
+      // can rename/rewrite/re-flow them, add new commands, and reset built-ins.
+      commands: defaultAICommands()
     },
     // Visible attachment filetypes
     attachmentExtensions: [],

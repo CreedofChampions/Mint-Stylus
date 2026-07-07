@@ -2,13 +2,13 @@
  * @ignore
  * BEGIN HEADER
  *
- * Contains:        Inline QQ Question Plugin
+ * Contains:        Inline /q…q/ Question Plugin
  * CVM-Role:        Extension
  * Maintainer:      Mint Stylus
  * License:         GNU GPL v3
  *
  * Description:     Mint Stylus AI extension. Watches the document for inline
- *                  `QQ <question> QQ` spans. When a closing `QQ` completes such
+ *                  `/q <question> q/` spans. When a closing `q/` completes such
  *                  a span, the span is replaced with a "Loading…" inline widget,
  *                  an injected async `askAI(question)` callback is invoked, and
  *                  when it resolves the widget is replaced in-place with the
@@ -41,7 +41,7 @@ import { type SyntaxNode } from '@lezer/common'
 import { trans } from '@common/i18n-renderer'
 
 /**
- * Node types inside which a `QQ … QQ` span must NOT be treated as a question,
+ * Node types inside which a `/q … q/` span must NOT be treated as a question,
  * because the user is (e.g.) writing code or a comment. Mirrors the protected
  * node list used elsewhere in the editor (see commands/autocorrect.ts).
  */
@@ -53,84 +53,95 @@ const PROTECTED_NODES = [
 ]
 
 /**
- * The wall-clock delay (ms) we wait after the closing `QQ` lands before firing
+ * The wall-clock delay (ms) we wait after the closing `q/` lands before firing
  * the request. This debounces bursts of edits so we only fire once, and gives
  * the user a moment in case they keep typing.
  */
 const QQ_TRIGGER_DELAY = 400
 
 /**
- * A single detected `QQ … QQ` span within a piece of text.
+ * A single detected `/q … q/` span within a piece of text.
  */
-export interface QQSpan {
-  /** Absolute start offset of the span (the first `Q` of the opening `QQ`). */
+export interface InlineQuerySpan {
+  /** Absolute start offset of the span (the `/` of the opening `/q`). */
   from: number
-  /** Absolute end offset of the span (just after the last `Q` of the closing `QQ`). */
+  /** Absolute end offset of the span (just after the `/` of the closing `q/`). */
   to: number
-  /** The trimmed question text located between the two `QQ` markers. */
+  /** The trimmed question text located between the two markers. */
   question: string
 }
 
 /**
  * PURE, side-effect-free helper (exported for unit testing). Scans `text` for
- * `QQ <question> QQ` spans and returns their absolute character ranges plus the
+ * `/q <question> q/` spans and returns their absolute character ranges plus the
  * trimmed question.
  *
  * Rules:
- * - Markers are the literal two-character token `QQ`.
+ * - The opener is the literal two-character token `/q` and the closer is the
+ *   literal two-character token `q/`. The `q` is matched case-insensitively, so
+ *   `/Q … Q/` and `/q … Q/` also work, but the `/` must be a literal slash.
  * - Spans are matched non-greedily and non-overlapping, left to right, so
- *   `QQ a QQ QQ b QQ` yields two spans, not one span from the first to the last.
+ *   `/q a q/ /q b q/` yields two spans, not one span from the first to the last.
  * - The question between the markers must contain at least one non-whitespace
- *   character (an empty `QQQQ` or `QQ   QQ` is ignored).
- * - A `QQ` token must be a standalone token: it may not be immediately preceded
- *   or followed by another `Q` (so `QQQ` / `QQQQ` runs are not mis-split). Word
- *   boundaries are otherwise not required, so `QQ what? QQ` works mid-sentence.
+ *   character (an empty `/q q/` is ignored) — but scanning continues after the
+ *   closer so a later well-formed span is still found.
+ * - The opener `/q` ends with `q` and the closer `q/` starts with `q`; the same
+ *   character index may never serve as both, so the closer search always begins
+ *   at `openerIndex + 2`. Hence `/q/` (three chars) yields no span and `/qq/`
+ *   (opener `/q`, closer `q/` from index 2, empty question) also yields none.
+ * - A lone opener with no following closer, or a closer with no preceding
+ *   opener, yields nothing.
  *
  * @param   text  The text to scan (may be a whole document or a slice).
  *
  * @return  The list of detected spans, in document order.
  */
-export function detectQQSpans (text: string): QQSpan[] {
-  const spans: QQSpan[] = []
+export function detectInlineQuerySpans (text: string): InlineQuerySpan[] {
+  const spans: InlineQuerySpan[] = []
 
-  // Find every standalone `QQ` marker position. A marker is a `QQ` not flanked
-  // by a further `Q` on either side (to avoid splitting `QQQ`+ runs).
-  const markerPositions: number[] = []
-  for (let i = 0; i <= text.length - 2; i++) {
-    if (text[i] !== 'Q' || text[i + 1] !== 'Q') {
+  // Returns true if a `/q` opener starts at index `i` (case-insensitive on q).
+  const isOpener = (i: number): boolean =>
+    text[i] === '/' && (text[i + 1] === 'q' || text[i + 1] === 'Q')
+
+  // Returns true if a `q/` closer starts at index `i` (case-insensitive on q).
+  const isCloser = (i: number): boolean =>
+    (text[i] === 'q' || text[i] === 'Q') && text[i + 1] === '/'
+
+  let cursor = 0
+  while (cursor <= text.length - 2) {
+    // Find the next opener at or after the cursor.
+    if (!isOpener(cursor)) {
+      cursor++
       continue
     }
 
-    const before = i > 0 ? text[i - 1] : ''
-    const after = i + 2 < text.length ? text[i + 2] : ''
-    if (before === 'Q' || after === 'Q') {
-      // Part of a longer run of Qs; skip this position. Advance past the run so
-      // we don't register overlapping markers within `QQQ…`.
-      continue
+    const openerIndex = cursor
+    // Search for the closer strictly after the opener's two characters, so the
+    // opener's `q` can never double as the closer's `q`.
+    let closerIndex = -1
+    for (let j = openerIndex + 2; j <= text.length - 2; j++) {
+      if (isCloser(j)) {
+        closerIndex = j
+        break
+      }
     }
 
-    markerPositions.push(i)
-  }
-
-  // Pair markers up left-to-right and non-overlapping: 0-1, 2-3, …
-  for (let m = 0; m + 1 < markerPositions.length; m += 2) {
-    const openStart = markerPositions[m]
-    const closeStart = markerPositions[m + 1]
-
-    const from = openStart
-    const to = closeStart + 2 // include the closing `QQ`
-    const question = text.slice(openStart + 2, closeStart).trim()
-
-    if (question.length === 0) {
-      // Empty question: drop this pair but keep the closing marker available to
-      // become an opener for the next pairing, so we can still match a later
-      // well-formed span. Re-align by stepping back one so `m += 2` lands on the
-      // (formerly) closing marker as the next opener.
-      m -= 1
-      continue
+    if (closerIndex === -1) {
+      // Lone opener with no following closer: nothing more to find.
+      break
     }
 
-    spans.push({ from, to, question })
+    const from = openerIndex
+    const to = closerIndex + 2 // include the closing `q/`
+    const question = text.slice(openerIndex + 2, closerIndex).trim()
+
+    if (question.length > 0) {
+      spans.push({ from, to, question })
+    }
+
+    // Whether we emitted or skipped an empty pair, resume scanning after the
+    // closer so we don't reuse any of its characters.
+    cursor = closerIndex + 2
   }
 
   return spans
@@ -235,7 +246,7 @@ const loadingField = StateField.define<DecorationSet>({
 
 /**
  * Returns true if the position lies within a protected syntax node (code,
- * comment, YAML frontmatter, …) in which a `QQ` span must be ignored.
+ * comment, YAML frontmatter, …) in which a `/q … q/` span must be ignored.
  */
 function isProtected (state: EditorState, pos: number): boolean {
   // resolveInner with side -1 so we catch the node that *ends* at `pos` too.
@@ -250,7 +261,7 @@ function isProtected (state: EditorState, pos: number): boolean {
 }
 
 /**
- * Factory: returns the CodeMirror extension implementing inline `QQ … QQ`
+ * Factory: returns the CodeMirror extension implementing inline `/q … q/`
  * questions.
  *
  * @param   askAI  Async callback that receives the question text and resolves
@@ -276,10 +287,11 @@ export function qqInline (askAI: (question: string) => Promise<string>): Extensi
       }
 
       // Only consider firing when a change actually inserted characters that
-      // could complete a closing `QQ`. Cheap gate before the debounce.
+      // could complete a closing `q/` (the trailing `/`). Cheap gate before the
+      // debounce.
       let mightHaveClosed = false
       update.changes.iterChanges((_fA, _tA, _fB, _tB, inserted) => {
-        if (inserted.length > 0 && inserted.toString().includes('Q')) {
+        if (inserted.length > 0 && inserted.toString().includes('/')) {
           mightHaveClosed = true
         }
       })
@@ -303,13 +315,13 @@ export function qqInline (askAI: (question: string) => Promise<string>): Extensi
     }
 
     /**
-     * Scans the current document for a completed, unprotected `QQ … QQ` span and,
+     * Scans the current document for a completed, unprotected `/q … q/` span and,
      * if one is found, fires exactly one AI request for it.
      */
     private maybeFire (view: EditorView): void {
       const state = view.state
       const doc = state.sliceDoc()
-      const spans = detectQQSpans(doc)
+      const spans = detectInlineQuerySpans(doc)
 
       if (spans.length === 0) {
         return
@@ -355,11 +367,11 @@ export function qqInline (askAI: (question: string) => Promise<string>): Extensi
      * and on resolution relocates the marker and dispatches the answer in its
      * place.
      */
-    private fire (view: EditorView, span: QQSpan): void {
+    private fire (view: EditorView, span: InlineQuerySpan): void {
       const id = this.nextId++
       const marker = makeMarker(id)
 
-      // Step 1: replace the `QQ … QQ` span text with the sentinel marker. We
+      // Step 1: replace the `/q … q/` span text with the sentinel marker. We
       // decorate over the marker with the loading widget in the same dispatch.
       view.dispatch({
         changes: { from: span.from, to: span.to, insert: marker },

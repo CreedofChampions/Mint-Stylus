@@ -25,6 +25,7 @@ import { trans } from '@common/i18n-renderer'
 import { type PreferencesFieldset } from '../App.vue'
 import { PreferencesGroups } from './_preferences-groups'
 import AIProviderControl from '../AIProviderControl.vue'
+import AICommandsControl from '../AICommandsControl.vue'
 
 /**
  * Prompts for an API key and stores it (encrypted, in main) for the given
@@ -104,6 +105,18 @@ export function getAIFields (): PreferencesFieldset[] {
             medium: trans('Medium'),
             high: trans('High')
           }
+        }
+      ]
+    },
+    {
+      title: trans('AI Commands'),
+      group: PreferencesGroups.AI,
+      infoString: trans('The commands offered when you highlight text and choose "Command" (and in the AI menu). Edit their prompts, change how each one presents its output, add your own, or reset them to the defaults.'),
+      help: undefined,
+      fields: [
+        {
+          type: 'custom',
+          component: AICommandsControl
         }
       ]
     },
