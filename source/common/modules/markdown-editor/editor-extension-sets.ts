@@ -357,8 +357,8 @@ export function getMarkdownExtensions (options: CoreExtensionOptions): Extension
     // 'mint-ai-summarize' / 'mint-ai-command' and opens the AI panel via the
     // store. No AI/HTTP call happens here — that all lives in the main process.
     aiSelectionMenu({
-      onSummarize (selection: AISelection): void {
-        window.dispatchEvent(new CustomEvent<AISelection>('mint-ai-summarize', { detail: selection }))
+      onRunCommand (commandId: string, selection: AISelection): void {
+        window.dispatchEvent(new CustomEvent('mint-ai-run-command', { detail: { commandId, selection } }))
       },
       onCommand (selection: AISelection): void {
         window.dispatchEvent(new CustomEvent<AISelection>('mint-ai-command', { detail: selection }))

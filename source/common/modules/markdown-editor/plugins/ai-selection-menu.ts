@@ -47,11 +47,27 @@ export interface AISelection {
  * selection; the buttons do nothing observable on their own.
  */
 export interface AISelectionMenuHandlers {
-  /** Invoked when the user clicks "Summarize". */
-  onSummarize: (selection: AISelection) => void
-  /** Invoked when the user clicks "Command". */
+  /**
+   * Invoked when the user clicks one of the quick command buttons (Shorten,
+   * Summarize, Synonyms, Alternatives). Receives the command id + the selection.
+   */
+  onRunCommand: (commandId: string, selection: AISelection) => void
+  /** Invoked when the user clicks "More…" (opens the full command chooser). */
   onCommand: (selection: AISelection) => void
 }
+
+/**
+ * The quick commands shown directly in the selection bubble, so the four most
+ * common actions are one click away without opening the chooser. The ids match
+ * the built-in COMMANDS; Challenge Idea and any user-added custom commands live
+ * behind the "More…" button. Labels are the built-ins' default names.
+ */
+const QUICK_COMMANDS: Array<{ id: string, label: string }> = [
+  { id: 'SHORTEN', label: 'Shorten' },
+  { id: 'SUMMARIZE', label: 'Summarize' },
+  { id: 'SYNONYMS', label: 'Synonyms' },
+  { id: 'ALTERNATIVES', label: 'Alternatives' }
+]
 
 /**
  * Reads the main selection out of the state and turns it into an AISelection.
@@ -154,41 +170,45 @@ function getAiSelectionTooltips (state: EditorState, handlers: AISelectionMenuHa
       const buttonWrapper = document.createElement('div')
       buttonWrapper.className = 'button-wrapper'
 
-      const summarize = document.createElement('button')
-      summarize.classList.add('ai-selection-menu-button')
-      summarize.setAttribute('title', trans('Summarize the selected text'))
-      summarize.textContent = trans('Summarize')
-
-      const command = document.createElement('button')
-      command.classList.add('ai-selection-menu-button')
-      command.setAttribute('title', trans('Run an AI command on the selected text'))
-      command.textContent = trans('Command')
-
-      buttonWrapper.append(summarize, command)
-      dom.append(buttonWrapper)
-
       // NOTE: We use onmousedown (mirroring the formatting toolbar) rather than
       // onclick. A click only fires on mouseup, by which point moving the mouse
       // to the button may have altered the selection and re-rendered the
       // tooltip. Handling mousedown and preventing default keeps the selection
-      // intact so the payload we hand off is the one the user actually saw.
-      summarize.onmousedown = function (event) {
-        event.preventDefault()
-        // Re-read the selection at click time so the payload is current even if
-        // the state changed since this tooltip DOM was created.
-        const current = getSelection(state)
-        if (current !== undefined) {
-          handlers.onSummarize(current)
+      // intact so the payload we hand off is the one the user actually saw. We
+      // also re-read the selection at click time so the payload is current.
+
+      // The four quick commands, one click away.
+      for (const qc of QUICK_COMMANDS) {
+        const btn = document.createElement('button')
+        btn.classList.add('ai-selection-menu-button')
+        btn.setAttribute('title', trans('Run "%s" on the selected text', qc.label))
+        btn.textContent = trans(qc.label)
+        btn.onmousedown = function (event) {
+          event.preventDefault()
+          const current = getSelection(state)
+          if (current !== undefined) {
+            handlers.onRunCommand(qc.id, current)
+          }
         }
+        buttonWrapper.append(btn)
       }
 
-      command.onmousedown = function (event) {
+      // "More…" opens the full command chooser (Challenge Idea, custom commands,
+      // and the one-off "tell the AI what to do" input).
+      const more = document.createElement('button')
+      more.classList.add('ai-selection-menu-button')
+      more.setAttribute('title', trans('More AI commands (custom, challenge idea, one-off…)'))
+      more.textContent = trans('More…')
+      more.onmousedown = function (event) {
         event.preventDefault()
         const current = getSelection(state)
         if (current !== undefined) {
           handlers.onCommand(current)
         }
       }
+      buttonWrapper.append(more)
+
+      dom.append(buttonWrapper)
 
       return { dom }
     }
@@ -206,7 +226,8 @@ const aiSelectionMenuTheme = EditorView.baseTheme({
     overflow: 'hidden'
   },
   '.cm-tooltip.cm-ai-selection-menu .button-wrapper': {
-    display: 'flex'
+    display: 'flex',
+    flexWrap: 'wrap'
   },
   '.cm-tooltip.cm-ai-selection-menu button.ai-selection-menu-button': {
     border: 'none',
