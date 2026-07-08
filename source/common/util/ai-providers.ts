@@ -67,6 +67,15 @@ export const PROVIDERS = {
     defaultModel: 'z-ai/glm-5.2',
     keyUrl: 'https://openrouter.ai/keys'
   },
+  wisgate: {
+    // WisGate — an OpenAI-compatible AI gateway that routes to many models
+    // (Claude / GPT / DeepSeek / Gemini / GLM) behind one endpoint + key.
+    label: 'WisGate',
+    baseURL: 'https://api.wisgate.ai/v1',
+    needsKey: true,
+    defaultModel: 'claude-opus-4-7',
+    keyUrl: 'https://wisgate.ai/hall/tokens'
+  },
   'ollama-cloud': {
     label: 'Ollama Cloud',
     baseURL: 'https://ollama.com/v1',
