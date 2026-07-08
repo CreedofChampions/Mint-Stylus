@@ -27,60 +27,8 @@ import { PreferencesGroups } from './_preferences-groups'
 import AIProviderControl from '../AIProviderControl.vue'
 import AICommandsControl from '../AICommandsControl.vue'
 import AIContextControl from '../AIContextControl.vue'
-
-/**
- * Prompts for an API key and stores it (encrypted, in main) for the given
- * provider — used for the optional web-search providers. The plaintext key only
- * ever travels inbound to saveKey; it is never read back out into the renderer.
- *
- * @param   {string}  provider  The provider slug to store the key for.
- * @param   {string}  label     Human-readable provider name for the prompt.
- */
-function promptForKey (provider: string, label: string): void {
-  const key = window.prompt(trans('Enter the API key for %s. It will be stored encrypted and never displayed again.', label))
-  if (key === null) {
-    return // User cancelled
-  }
-
-  const trimmed = key.trim()
-  if (trimmed === '') {
-    return // Nothing to save
-  }
-
-  window.ai.saveKey(provider, trimmed)
-    .then(saved => {
-      window.alert(saved
-        ? trans('The API key for %s has been saved.', label)
-        : trans('The API key for %s could not be saved.', label))
-    })
-    .catch(err => {
-      console.error(err)
-      window.alert(trans('The API key for %s could not be saved.', label))
-    })
-}
-
-/**
- * Opens the "Write in My Style" precursor text for editing. Reads the current
- * value via window.ai.getStyle(), lets the user edit it inline, and persists it
- * with window.ai.setStyle(). All key/HTTP/file work stays in the main process.
- */
-function editStyleFile (): void {
-  window.ai.getStyle()
-    .then(current => {
-      const edited = window.prompt(trans('Edit your "Write in My Style" guide. This text is prepended to style-aware requests.'), current)
-      if (edited === null) {
-        return // User cancelled
-      }
-
-      return window.ai.setStyle(edited)
-        .then(saved => {
-          window.alert(saved
-            ? trans('Your "Write in My Style" guide has been saved.')
-            : trans('Your "Write in My Style" guide could not be saved.'))
-        })
-    })
-    .catch(err => console.error(err))
-}
+import AISearchKeyControl from '../AISearchKeyControl.vue'
+import AIStyleControl from '../AIStyleControl.vue'
 
 export function getAIFields (): PreferencesFieldset[] {
   return [
@@ -140,28 +88,8 @@ export function getAIFields (): PreferencesFieldset[] {
       help: undefined,
       fields: [
         {
-          type: 'select',
-          label: trans('Search provider'),
-          model: 'ai.searchProvider',
-          options: {
-            none: trans('Off'),
-            tavily: 'Tavily (free tier, no card)',
-            brave: 'Brave'
-          }
-        },
-        {
-          type: 'button',
-          label: trans('Set search key…'),
-          onClick: () => {
-            const provider = String(window.config.get('ai.searchProvider') ?? 'none')
-            if (provider === 'tavily') {
-              promptForKey('tavily', 'Tavily')
-            } else if (provider === 'brave') {
-              promptForKey('brave', 'Brave')
-            } else {
-              window.alert(trans('Turn on a search provider first, then set its key.'))
-            }
-          }
+          type: 'custom',
+          component: AISearchKeyControl
         }
       ]
     },
@@ -172,9 +100,8 @@ export function getAIFields (): PreferencesFieldset[] {
       help: undefined,
       fields: [
         {
-          type: 'button',
-          label: trans('Edit Write-in-My-Style guide…'),
-          onClick: () => { editStyleFile() }
+          type: 'custom',
+          component: AIStyleControl
         }
       ]
     }
