@@ -78,6 +78,20 @@ const tests: Array<{ desc: string, input: string, expected: InlineQuerySpan[] }>
     expected: [
       { from: 4, to: 15, question: 'upper' }
     ]
+  },
+  {
+    // SINGLE-LINE rule: an opener and a closer on different lines never pair, so
+    // a `/q` typed mid-document cannot reach across lines to an unrelated `q/`.
+    desc: 'opener and closer on DIFFERENT lines do not pair',
+    input: 'Ask /q what is this\nand a stray q/ here',
+    expected: []
+  },
+  {
+    // The exact reported bug: a `/q` mid-document must not grab everything down
+    // to a distant `q/` (here the "q/" inside "faq/" a couple lines below).
+    desc: 'a /q never reaches across lines to a distant q/ (reported bug)',
+    input: 'Note /q remind me\nline two\nsee the faq/ ref',
+    expected: []
   }
 ]
 
@@ -113,5 +127,13 @@ describe('QQInline#detectInlineQuerySpans()', function () {
       { from: 5, to: 16, question: 'first' },
       { from: 21, to: 33, question: 'second' }
     ])
+  })
+
+  it('should skip a mid-doc /q with no same-line closer but still find a valid span on a later line', function () {
+    const input = 'Draft /q todo later\n\nNow ask /q what is 2 plus 2? q/ ok'
+    const spans = detectInlineQuerySpans(input)
+    strictEqual(spans.length, 1)
+    strictEqual(spans[0].question, 'what is 2 plus 2?')
+    strictEqual(input.slice(spans[0].from, spans[0].to), '/q what is 2 plus 2? q/')
   })
 })
