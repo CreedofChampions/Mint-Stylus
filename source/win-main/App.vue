@@ -972,6 +972,7 @@ onMounted(() => {
   // precisely that range, and drive the AI store.
   window.addEventListener('mint-ai-summarize', handleSummarizeEvent as EventListener)
   window.addEventListener('mint-ai-command', handleCommandEvent as EventListener)
+  window.addEventListener('mint-ai-run-command', handleRunCommandEvent as EventListener)
 
   // The AI-command menu entries run the main-process `ai-command` command, which
   // forwards to the renderer. We accept it on a dedicated `ai-command` channel
@@ -1281,6 +1282,32 @@ function handleCommandEvent (event: CustomEvent<AISelection>): void {
     pageContext: view !== undefined ? view.state.sliceDoc() : undefined
   })
   aiStore.openPanel('command')
+}
+
+/**
+ * Handles the `mint-ai-run-command` DOM CustomEvent dispatched by the AI
+ * selection bubble's quick command buttons (Shorten / Summarize / Synonyms /
+ * Alternatives). Runs the chosen command directly on the selection — one click,
+ * no chooser — passing the whole document as context. The command itself is
+ * scoped to the selection in the store (buildCommandMessages), so it transforms
+ * only the highlighted text while still seeing the full page.
+ *
+ * @param  {CustomEvent}  event  Detail: { commandId, selection }.
+ */
+function handleRunCommandEvent (event: CustomEvent<{ commandId: string, selection: AISelection }>): void {
+  const detail = event.detail
+  const selection = detail?.selection
+  const commandId = detail?.commandId
+  if (selection === undefined || typeof commandId !== 'string' || selection.text.trim() === '') {
+    return
+  }
+  // Remember the exact range so a summarize-flow command's options can replace it.
+  pendingSummarizeSelection.value = { ...selection }
+  const view = activeEditorView()
+  const pageContext = view !== undefined ? view.state.sliceDoc() : undefined
+  aiStore.setPendingSelection({ text: selection.text, pageContext })
+  aiStore.runCommand(commandId, selection.text, pageContext)
+    .catch(err => console.error(`AI command "${commandId}" failed`, err))
 }
 
 /**

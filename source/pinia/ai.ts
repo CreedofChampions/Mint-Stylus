@@ -481,6 +481,46 @@ export const useAIStore = defineStore('ai', () => {
   }
 
   /**
+   * Builds the (system + user) messages for a command run, scoping the TASK to
+   * the selection while still giving the model the whole document as context.
+   *
+   * When a distinct page context exists (i.e. the user highlighted a portion of
+   * a larger document), the user message explicitly marks the selection as the
+   * ONLY text to act on and demotes the full document to clearly-labelled
+   * background context — so a command like Shorten/Summarize transforms just the
+   * highlighted text, never the whole page, even though the whole page is sent.
+   * When there is no distinct selection (the command acts on the whole page, e.g.
+   * run from the menu with nothing highlighted), the input is used as-is.
+   *
+   * @param   {string}  prompt       The command's system prompt.
+   * @param   {string}  input        The selection (or the whole page).
+   * @param   {string}  pageContext  Optional whole-document context.
+   *
+   * @return  {AIChatMessage[]}      The ordered [system, user] messages.
+   */
+  function buildCommandMessages (prompt: string, input: string, pageContext?: string): AIChatMessage[] {
+    const page = (pageContext ?? '').trim()
+    const scoped = page !== '' && page !== input.trim()
+    const userContent = scoped
+      ? [
+        'Apply the command to the SELECTED TEXT only. Return ONLY the transformed version of the selected text — do not rewrite, repeat, summarise, or include the rest of the document. The full document is provided afterwards purely as background context to inform the result.',
+        '',
+        '----- SELECTED TEXT (act on THIS, and only this) -----',
+        input,
+        '----- END SELECTED TEXT -----',
+        '',
+        '----- FULL DOCUMENT (context only — do NOT act on this) -----',
+        page,
+        '----- END FULL DOCUMENT -----'
+      ].join('\n')
+      : input
+    return [
+      { role: 'system', content: prompt },
+      { role: 'user', content: userContent }
+    ]
+  }
+
+  /**
    * Streams a command's markdown answer into `panelContent.text` (command mode).
    *
    * @param   {string}  id           The command id (for error logging only).
@@ -493,10 +533,10 @@ export const useAIStore = defineStore('ai', () => {
     inFlight.value = true
     panelContent.value = { ...emptyPanelContent(), text: '' }
 
-    const messages: AIChatMessage[] = [
-      { role: 'system', content: prompt },
-      { role: 'user', content: input }
-    ]
+    // The page (if distinct from the selection) is embedded in the user message
+    // as clearly-labelled CONTEXT ONLY, so pageContext is NOT passed separately
+    // (that would inject a second, ambiguous "the whole document" system message).
+    const messages = buildCommandMessages(prompt, input, pageContext)
 
     try {
       // Pass the delta sink INTO chatStream so it is subscribed before the
@@ -504,8 +544,7 @@ export const useAIStore = defineStore('ai', () => {
       await window.ai.chatStream({
         provider: currentProvider.value || undefined,
         model: currentModel.value || undefined,
-        messages,
-        pageContext
+        messages
       }, (delta: string) => {
         panelContent.value.text += delta
       })
@@ -530,17 +569,15 @@ export const useAIStore = defineStore('ai', () => {
     openPanel('summarize')
     inFlight.value = true
 
-    const messages: AIChatMessage[] = [
-      { role: 'system', content: prompt },
-      { role: 'user', content: input }
-    ]
+    // Page embedded as context-only inside the user message (see buildCommandMessages);
+    // pageContext is not passed separately.
+    const messages = buildCommandMessages(prompt, input, pageContext)
 
     try {
       const response = await window.ai.chat({
         provider: currentProvider.value || undefined,
         model: currentModel.value || undefined,
-        messages,
-        pageContext
+        messages
       })
       const options = parseSummarizeOptions(response)
       panelContent.value = { ...emptyPanelContent(), options }
