@@ -89,7 +89,14 @@ export interface InlineQuerySpan {
  *   character index may never serve as both, so the closer search always begins
  *   at `openerIndex + 2`. Hence `/q/` (three chars) yields no span and `/qq/`
  *   (opener `/q`, closer `q/` from index 2, empty question) also yields none.
- * - A lone opener with no following closer, or a closer with no preceding
+ * - A span must be SINGLE-LINE: the opener and its closer must be on the same
+ *   line (no newline between them). This is the whole point of the marker — an
+ *   inline question is one line — and it stops a `/q` typed mid-document from
+ *   pairing with some unrelated `q/` many lines away (e.g. a URL like `…/faq/`,
+ *   a path, or an earlier query) and swallowing everything in between. A `/q`
+ *   with no closer on its own line simply does nothing; a valid `/q … q/` on a
+ *   later line is still detected.
+ * - A lone opener with no same-line closer, or a closer with no preceding
  *   opener, yields nothing.
  *
  * @param   text  The text to scan (may be a whole document or a slice).
@@ -117,9 +124,14 @@ export function detectInlineQuerySpans (text: string): InlineQuerySpan[] {
 
     const openerIndex = cursor
     // Search for the closer strictly after the opener's two characters, so the
-    // opener's `q` can never double as the closer's `q`.
+    // opener's `q` can never double as the closer's `q`. Stop at a newline: a
+    // question span is single-line, so a `/q` never reaches across lines to a
+    // distant `q/`.
     let closerIndex = -1
     for (let j = openerIndex + 2; j <= text.length - 2; j++) {
+      if (text[j] === '\n') {
+        break // end of this line — no same-line closer for this opener
+      }
       if (isCloser(j)) {
         closerIndex = j
         break
@@ -127,8 +139,10 @@ export function detectInlineQuerySpans (text: string): InlineQuerySpan[] {
     }
 
     if (closerIndex === -1) {
-      // Lone opener with no following closer: nothing more to find.
-      break
+      // No same-line closer for this opener. Do NOT stop scanning — a later line
+      // may still hold a well-formed `/q … q/`. Advance past this opener.
+      cursor = openerIndex + 2
+      continue
     }
 
     const from = openerIndex
