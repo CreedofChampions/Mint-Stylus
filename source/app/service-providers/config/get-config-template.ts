@@ -233,7 +233,7 @@ export interface ConfigOptions {
   // provider (see PROVIDERS in @common/util/ai-providers) — baseURL/model are
   // optional advanced overrides (empty by default), never surfaced in the UI.
   ai: {
-    provider: 'openrouter'|'zai'|'ollama-cloud'|'ollama-local'|'custom'
+    provider: 'openrouter'|'wisgate'|'zai'|'ollama-cloud'|'ollama-local'|'custom'
     baseURL: string
     model: string
     searchProvider: 'tavily'|'brave'|'none'

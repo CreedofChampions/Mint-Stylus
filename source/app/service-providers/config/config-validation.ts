@@ -41,7 +41,7 @@ const RULES = {
   'display.imageHeight': 'required|number|min:1|max:100|default:100',
   'watchdog.stabilityThreshold': 'optional|number|min:1|max:100000|default:1000',
   // Mint Stylus AI configuration (added for the AI-native fork)
-  'ai.provider': 'required|string|in:openrouter,zai,ollama-cloud,ollama-local,custom|default:openrouter',
+  'ai.provider': 'required|string|in:openrouter,wisgate,zai,ollama-cloud,ollama-local,custom|default:openrouter',
   // baseURL and model are optional advanced overrides: empty means "derive from
   // the provider" (see PROVIDERS in @common/util/ai-providers). Never required.
   'ai.baseURL': 'optional|string|default:',
