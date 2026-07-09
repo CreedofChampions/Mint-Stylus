@@ -85,6 +85,14 @@ export interface AIRecoverEntry {
   from: number
   to: number
   original: string
+  /**
+   * The text that was inserted over `original` (i.e. what currently occupies
+   * [from,to) if the document has not been edited since). Lets the editor host
+   * verify the range still holds this replacement before reversing it, so a
+   * Recover after unrelated edits (or in a different document) can never
+   * overwrite the wrong text.
+   */
+  replacement?: string
 }
 
 /**
@@ -164,6 +172,8 @@ declare global {
         model?: string
         messages: AIChatMessage[]
         pageContext?: string
+        disableSearch?: boolean
+        contextQuery?: string
       }) => Promise<string>
       /**
        * Streaming chat completion. Subscribes `onDelta` (if given) BEFORE the
@@ -177,6 +187,8 @@ declare global {
         model?: string
         messages: AIChatMessage[]
         pageContext?: string
+        disableSearch?: boolean
+        contextQuery?: string
       }, onDelta?: (delta: string) => void) => Promise<string>
       /**
        * Lists the models available from the current (or given) provider.
@@ -462,6 +474,11 @@ export const useAIStore = defineStore('ai', () => {
    * @return  {Promise<void>}
    */
   async function runCommand (id: string, input: string, pageContext?: string): Promise<void> {
+    // One run at a time: a second click while a command is streaming would
+    // clobber the panel content mid-stream and race the pending selection.
+    if (inFlight.value) {
+      return
+    }
     // Pick up any edits made in Preferences without needing a restart.
     reloadCommands()
     const cmd = commands.value.find(command => command.id === id)
@@ -541,10 +558,16 @@ export const useAIStore = defineStore('ai', () => {
     try {
       // Pass the delta sink INTO chatStream so it is subscribed before the
       // request is dispatched; the promise resolves once the stream completes.
+      // disableSearch: the user turn embeds the whole document, so the word
+      // "search" appearing anywhere in it must never trigger the web-search
+      // path (which would send the document to the search API). contextQuery
+      // keeps folder/MCP context grounded on the selection, not the huge turn.
       await window.ai.chatStream({
         provider: currentProvider.value || undefined,
         model: currentModel.value || undefined,
-        messages
+        messages,
+        disableSearch: true,
+        contextQuery: input
       }, (delta: string) => {
         panelContent.value.text += delta
       })
@@ -574,10 +597,15 @@ export const useAIStore = defineStore('ai', () => {
     const messages = buildCommandMessages(prompt, input, pageContext)
 
     try {
+      // disableSearch/contextQuery: same reasoning as the stream flow — the
+      // embedded document must never trip the web-search word-trigger, and any
+      // folder/MCP context should be retrieved for the selection.
       const response = await window.ai.chat({
         provider: currentProvider.value || undefined,
         model: currentModel.value || undefined,
-        messages
+        messages,
+        disableSearch: true,
+        contextQuery: input
       })
       const options = parseSummarizeOptions(response)
       panelContent.value = { ...emptyPanelContent(), options }
@@ -605,26 +633,34 @@ export const useAIStore = defineStore('ai', () => {
    * @return  {Promise<void>}
    */
   async function runCustomCommand (instruction: string, text: string, pageContext?: string): Promise<void> {
+    if (inFlight.value) {
+      return
+    }
     openPanel('command')
     inFlight.value = true
     panelContent.value = { ...emptyPanelContent(), text: '' }
 
-    const messages: AIChatMessage[] = [
-      {
-        role: 'system',
-        content: 'You are an editing assistant inside a markdown editor. Apply the user\'s instruction to the provided text. Respond in markdown with ONLY the result.'
-      },
-      { role: 'user', content: instruction + '\n\n---\n\n' + text }
-    ]
+    // Same selection-scoped framing as the preset commands: the instruction
+    // lives in the system prompt and buildCommandMessages marks the selection
+    // as the only text to act on, with the page embedded as context-only (no
+    // separate pageContext, which would inject the document a second time).
+    const systemPrompt = [
+      'You are an editing assistant inside a markdown editor. Apply the following user instruction to the provided text. Respond in markdown with ONLY the result.',
+      '',
+      `The user's instruction: ${instruction}`
+    ].join('\n')
+    const messages = buildCommandMessages(systemPrompt, text, pageContext)
 
     try {
       // As in runCommand: pass the delta sink INTO chatStream so it is
-      // subscribed before the request is dispatched.
+      // subscribed before the request is dispatched. disableSearch/contextQuery:
+      // see runCommandStreamFlow.
       await window.ai.chatStream({
         provider: currentProvider.value || undefined,
         model: currentModel.value || undefined,
         messages,
-        pageContext
+        disableSearch: true,
+        contextQuery: instruction
       }, (delta: string) => {
         panelContent.value.text += delta
       })

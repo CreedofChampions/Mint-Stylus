@@ -146,6 +146,8 @@ export type AIProviderIPCAPI = IPCAPI<{
     pageContext?: string
     temperature?: number
     maxTokens?: number
+    disableSearch?: boolean
+    contextQuery?: string
   }
   'chat-stream': {
     id: string
@@ -157,6 +159,8 @@ export type AIProviderIPCAPI = IPCAPI<{
     pageContext?: string
     temperature?: number
     maxTokens?: number
+    disableSearch?: boolean
+    contextQuery?: string
   }
   'cancel': { id: string }
   'search': { provider?: WebSearchProvider, query: string }
@@ -611,6 +615,8 @@ export default class AIProvider extends ProviderContract {
     messages: ChatMessage[]
     system?: string
     pageContext?: string
+    disableSearch?: boolean
+    contextQuery?: string
   }): Promise<ChatMessage[]> {
     const style = await this._getStyle()
     const turns = Array.isArray(payload.messages) ? payload.messages : []
@@ -655,12 +661,21 @@ export default class AIProvider extends ProviderContract {
     // If the latest user turn explicitly asks to "search", ground the answer by
     // injecting a web-search RAG block as an additional system message BEFORE
     // the model call. Never throws — degrades to a short unavailable note.
-    const searchContext = await this._maybeBuildSearchContext(conversation)
+    // disableSearch: set by command runs whose user turn embeds the whole
+    // document — the word "search" appearing anywhere in the document must
+    // never trigger the web-search path (which would send the document to the
+    // search API as the query).
+    const searchContext = payload.disableSearch === true
+      ? undefined
+      : await this._maybeBuildSearchContext(conversation)
     const searchSystem = searchContext !== undefined ? [ searchContext ] : []
 
     // Inject the selected extra-context source (a local folder group or an MCP
     // server) as a system message. Off (source 'none') → nothing. Never throws.
-    const extraContext = await this._maybeBuildContextSource(conversation)
+    // contextQuery (when given, e.g. the selection of a command run) overrides
+    // the last user turn as the retrieval query, so a huge composed turn never
+    // becomes the folder/MCP search query.
+    const extraContext = await this._maybeBuildContextSource(conversation, payload.contextQuery)
     const contextSystem = extraContext !== undefined ? [ extraContext ] : []
 
     return [ ...preambleSystem, ...contextSystem, ...searchSystem, ...earlierTurns, ...finalUser ]
@@ -871,14 +886,16 @@ export default class AIProvider extends ProviderContract {
    * ready-to-inject system message. Never throws: a source error becomes a short
    * "(context unavailable)" note so the chat still completes.
    */
-  private async _maybeBuildContextSource (messages: ChatMessage[]): Promise<ChatMessage | undefined> {
+  private async _maybeBuildContextSource (messages: ChatMessage[], queryOverride?: string): Promise<ChatMessage | undefined> {
     const source = this._readConfig<string>('ai.contextSource') ?? 'none'
     if (source !== 'folder' && source !== 'mcp' && source !== 'both') {
       return undefined
     }
 
     const lastUser = [ ...messages ].reverse().find(m => m.role === 'user')
-    const query = typeof lastUser?.content === 'string' ? lastUser.content.trim() : ''
+    const query = typeof queryOverride === 'string' && queryOverride.trim().length > 0
+      ? queryOverride.trim()
+      : (typeof lastUser?.content === 'string' ? lastUser.content.trim() : '')
     if (query.length === 0) {
       return undefined
     }

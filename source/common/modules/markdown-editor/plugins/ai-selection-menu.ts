@@ -184,6 +184,11 @@ function getAiSelectionTooltips (state: EditorState, handlers: AISelectionMenuHa
         btn.setAttribute('title', trans('Run "%s" on the selected text', qc.label))
         btn.textContent = trans(qc.label)
         btn.onmousedown = function (event) {
+          // Left button only — mousedown (unlike click) fires for right/middle
+          // buttons too, and those must not launch an AI request.
+          if (event.button !== 0) {
+            return
+          }
           event.preventDefault()
           const current = getSelection(state)
           if (current !== undefined) {
@@ -200,6 +205,9 @@ function getAiSelectionTooltips (state: EditorState, handlers: AISelectionMenuHa
       more.setAttribute('title', trans('More AI commands (custom, challenge idea, one-off…)'))
       more.textContent = trans('More…')
       more.onmousedown = function (event) {
+        if (event.button !== 0) {
+          return
+        }
         event.preventDefault()
         const current = getSelection(state)
         if (current !== undefined) {
