@@ -1301,6 +1301,11 @@ function handleRunCommandEvent (event: CustomEvent<{ commandId: string, selectio
   if (selection === undefined || typeof commandId !== 'string' || selection.text.trim() === '') {
     return
   }
+  // One run at a time — a second quick-command click while one is in flight
+  // would race the pending selection and clobber the panel mid-stream.
+  if (aiStore.inFlight) {
+    return
+  }
   // Remember the exact range so a summarize-flow command's options can replace it.
   pendingSummarizeSelection.value = { ...selection }
   const view = activeEditorView()
@@ -1376,10 +1381,21 @@ function handleAIReplaceSelection (insert: string): void {
 
   const original = view.state.sliceDoc(from, to)
 
+  // INTEGRITY GUARD: only replace if the range still holds the exact text the
+  // options were generated for. If the user edited the document (offsets have
+  // shifted) or switched to a different file (the offsets address unrelated
+  // text), the slice no longer matches and dispatching would silently corrupt
+  // the wrong text. Bail instead — the user can re-select and re-run.
+  if (original !== pending.text) {
+    console.warn('[AI] Not applying the option: the selected text changed since the options were generated. Re-select and run again.')
+    return
+  }
+
   // Stash the original so it can be recovered. The stored {from,to} describes the
   // range the NEW text will occupy after this dispatch, so Recover can overwrite
-  // exactly that with the original.
-  aiStore.pushSummarizeReplacement({ from, to: from + insert.length, original })
+  // exactly that with the original; `replacement` lets Recover verify the range
+  // still holds this insert before reversing.
+  aiStore.pushSummarizeReplacement({ from, to: from + insert.length, original, replacement: insert })
 
   view.dispatch({ changes: { from, to, insert } })
 
@@ -1409,6 +1425,14 @@ function handleAIRecover (entry: AIRecoverEntry): void {
   const from = Math.min(entry.from, docLength)
   const to = Math.min(entry.to, docLength)
   if (from > to) {
+    return
+  }
+
+  // INTEGRITY GUARD (mirror of handleAIReplaceSelection): only reverse if the
+  // range still holds the replacement we inserted. After unrelated edits or a
+  // file switch the offsets address different text — bail rather than corrupt.
+  if (typeof entry.replacement === 'string' && view.state.sliceDoc(from, to) !== entry.replacement) {
+    console.warn('[AI] Not recovering: the document changed since this replacement was applied.')
     return
   }
 

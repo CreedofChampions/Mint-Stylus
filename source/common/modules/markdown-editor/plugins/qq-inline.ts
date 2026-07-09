@@ -106,56 +106,52 @@ export interface InlineQuerySpan {
 export function detectInlineQuerySpans (text: string): InlineQuerySpan[] {
   const spans: InlineQuerySpan[] = []
 
-  // Returns true if a `/q` opener starts at index `i` (case-insensitive on q).
-  const isOpener = (i: number): boolean =>
-    text[i] === '/' && (text[i + 1] === 'q' || text[i + 1] === 'Q')
+  // Returns true if the character at `i` is a marker `q` (case-insensitive).
+  const isQ = (i: number): boolean => text[i] === 'q' || text[i] === 'Q'
 
-  // Returns true if a `q/` closer starts at index `i` (case-insensitive on q).
-  const isCloser = (i: number): boolean =>
-    (text[i] === 'q' || text[i] === 'Q') && text[i + 1] === '/'
+  // SINGLE LINEAR PASS. We track the first unmatched opener on the current
+  // line and pair it with the next same-line closer. This is equivalent to the
+  // previous per-opener closer scan (if the first opener on a line has no
+  // same-line closer, no later opener on that line can have one either, since
+  // any closer after the later opener would also lie after the first), but it
+  // visits every character exactly once — O(n) — where the nested scan was
+  // O(n²) on pathological documents full of lone openers and could freeze the
+  // renderer for seconds on large files.
+  let opener = -1
+  let i = 0
+  while (i < text.length) {
+    const ch = text[i]
 
-  let cursor = 0
-  while (cursor <= text.length - 2) {
-    // Find the next opener at or after the cursor.
-    if (!isOpener(cursor)) {
-      cursor++
+    if (ch === '\n') {
+      // Spans are single-line: a newline abandons any unmatched opener.
+      opener = -1
+      i++
       continue
     }
 
-    const openerIndex = cursor
-    // Search for the closer strictly after the opener's two characters, so the
-    // opener's `q` can never double as the closer's `q`. Stop at a newline: a
-    // question span is single-line, so a `/q` never reaches across lines to a
-    // distant `q/`.
-    let closerIndex = -1
-    for (let j = openerIndex + 2; j <= text.length - 2; j++) {
-      if (text[j] === '\n') {
-        break // end of this line — no same-line closer for this opener
-      }
-      if (isCloser(j)) {
-        closerIndex = j
-        break
-      }
-    }
-
-    if (closerIndex === -1) {
-      // No same-line closer for this opener. Do NOT stop scanning — a later line
-      // may still hold a well-formed `/q … q/`. Advance past this opener.
-      cursor = openerIndex + 2
+    if (opener === -1 && ch === '/' && isQ(i + 1)) {
+      opener = i
+      // Skip past the opener so its `q` can never double as a closer's `q`
+      // (hence `/q/` yields no span).
+      i += 2
       continue
     }
 
-    const from = openerIndex
-    const to = closerIndex + 2 // include the closing `q/`
-    const question = text.slice(openerIndex + 2, closerIndex).trim()
-
-    if (question.length > 0) {
-      spans.push({ from, to, question })
+    if (opener !== -1 && isQ(i) && text[i + 1] === '/') {
+      const from = opener
+      const to = i + 2 // include the closing `q/`
+      const question = text.slice(opener + 2, i).trim()
+      if (question.length > 0) {
+        spans.push({ from, to, question })
+      }
+      // Whether emitted or skipped (empty question), resume after the closer so
+      // none of its characters are reused; a later opener may still pair.
+      opener = -1
+      i += 2
+      continue
     }
 
-    // Whether we emitted or skipped an empty pair, resume scanning after the
-    // closer so we don't reuse any of its characters.
-    cursor = closerIndex + 2
+    i++
   }
 
   return spans
@@ -297,6 +293,15 @@ export function qqInline (askAI: (question: string) => Promise<string>): Extensi
 
     update (update: ViewUpdate): void {
       if (!update.docChanged) {
+        return
+      }
+
+      // Only USER input (typing/pasting) may trigger a scan. This skips the
+      // plugin's own dispatches — the sentinel replacement and the answer
+      // insertion — so an AI answer that itself contains a literal `/q … q/`
+      // (e.g. the model explaining this very syntax) can never auto-fire a
+      // follow-up request in a loop. Undo/redo are likewise excluded.
+      if (!update.transactions.some(tr => tr.isUserEvent('input'))) {
         return
       }
 
