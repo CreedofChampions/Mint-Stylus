@@ -93,29 +93,42 @@
             v-bind:title="modelTitle"
           >
             <span class="ai-thinking-level-label">{{ trans('Model:') }}</span>
-            <select
-              v-if="!modelCustomMode"
-              v-model="modelSelectValue"
-            >
-              <option value="">{{ trans('(default)') }}</option>
-              <option
-                v-for="id in modelSelectOptions"
-                v-bind:key="id"
-                v-bind:value="id"
-              >{{ id }}</option>
-              <option value="__custom__">{{ trans('Custom…') }}</option>
-            </select>
-            <input
+            <!-- Show the ACTUAL state, not the commanded one: model choices are
+                 only real when the provider can actually be used. With no API key
+                 (or no Custom endpoint) the list can't work, so instead of offering
+                 unusable options we show the real blocker and open Preferences. -->
+            <template v-if="providerUsable">
+              <select
+                v-if="!modelCustomMode"
+                v-model="modelSelectValue"
+              >
+                <option value="">{{ trans('(default)') }}</option>
+                <option
+                  v-for="id in modelSelectOptions"
+                  v-bind:key="id"
+                  v-bind:value="id"
+                >{{ id }}</option>
+                <option value="__custom__">{{ trans('Custom…') }}</option>
+              </select>
+              <input
+                v-else
+                v-model="currentModel"
+                class="ai-model-input"
+                v-bind:placeholder="trans('model id')"
+                autocomplete="off"
+                spellcheck="false"
+                ref="modelCustomInput"
+                v-on:keydown.enter="modelCustomMode = false"
+                v-on:blur="modelCustomMode = false"
+              >
+            </template>
+            <button
               v-else
-              v-model="currentModel"
-              class="ai-model-input"
-              v-bind:placeholder="trans('model id')"
-              autocomplete="off"
-              spellcheck="false"
-              ref="modelCustomInput"
-              v-on:keydown.enter="modelCustomMode = false"
-              v-on:blur="modelCustomMode = false"
-            >
+              type="button"
+              class="ai-model-blocked"
+              v-bind:title="providerBlockedTitle"
+              v-on:click="openAiPreferences()"
+            >{{ providerBlockedLabel }}</button>
           </label>
           <label
             class="ai-thinking-level"
@@ -835,6 +848,47 @@ const currentProvider = computed<string>({
 const providerTitle = computed<string>(() => {
   const label = getProviderInfo(currentProvider.value).label
   return trans('AI provider: every request goes to %s. Switch providers here; set the provider\'s API key in Preferences → AI.', label)
+})
+
+// DESIGN PRINCIPLE — show the ACTUAL state, not the commanded one. A provider is
+// only usable once its precondition is really met: a key exists (for key-based
+// providers) or an endpoint URL exists (Custom). Until then, offering a model list
+// is offering choices that can't work — so the Model control shows the real blocker
+// ("Install key first") and opens Preferences instead. `providerHasKey` is the
+// verified fact (window.ai.hasKey), refreshed on provider change, on mount, and
+// when the window regains focus (i.e. after adding a key in Preferences).
+const providerHasKey = ref<boolean>(false)
+async function refreshProviderKey (): Promise<void> {
+  try {
+    providerHasKey.value = await window.ai.hasKey(currentProvider.value)
+  } catch (err) {
+    providerHasKey.value = false
+  }
+}
+const providerUsable = computed<boolean>(() => {
+  const slug = currentProvider.value
+  if (slug === 'custom') {
+    return String(configStore.config.ai.baseURL ?? '').trim() !== ''
+  }
+  return getProviderInfo(slug).needsKey ? providerHasKey.value : true
+})
+const providerBlockedLabel = computed<string>(() =>
+  currentProvider.value === 'custom' ? trans('Set endpoint first') : trans('Install key first')
+)
+const providerBlockedTitle = computed<string>(() =>
+  currentProvider.value === 'custom'
+    ? trans('Add the Custom endpoint URL in Preferences → AI, then pick a model.')
+    : trans('Add an API key for %s in Preferences → AI, then pick a model.', getProviderInfo(currentProvider.value).label)
+)
+function openAiPreferences (): void {
+  ipcRenderer.invoke('application', { command: 'open-ai-preferences' }).catch(err => console.error(err))
+}
+watch(() => [ configStore.config.ai.provider, configStore.config.ai.baseURL ], () => { void refreshProviderKey() })
+onMounted(() => {
+  void refreshProviderKey()
+  // Returning from Preferences (where a key is added) re-focuses this window but
+  // changes no config here, so re-verify the key on focus.
+  window.addEventListener('focus', () => { void refreshProviderKey() })
 })
 
 // AI-CREATED FOR MINT STYLUS: the GLOBAL model picker (top-right, next to
@@ -1989,6 +2043,30 @@ body.dark .ai-thinking-level .ai-model-input {
    native control clips/ellipsises the closed label, the popup still shows full. */
 .ai-thinking-level.ai-model-picker select {
   max-width: 130px;
+}
+
+/* Shown in place of the model dropdown when the provider isn't usable yet (no key
+   / no Custom endpoint). It states the real blocker and opens Preferences — amber
+   so it reads as "action needed", never a normal, pickable control. */
+.ai-thinking-level.ai-model-picker .ai-model-blocked {
+  height: 20px;
+  font: inherit;
+  font-size: 11px;
+  color: #7a5600;
+  background-color: #ffe6a3;
+  border: 1px solid #e0a800;
+  border-radius: 10px;
+  padding: 0 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ai-thinking-level.ai-model-picker .ai-model-blocked:hover {
+  background-color: #ffdd85;
+}
+body.dark .ai-thinking-level.ai-model-picker .ai-model-blocked {
+  color: #ffd766;
+  background-color: #4a3a00;
+  border-color: #7a5f00;
 }
 
 /* Working-state status badge: a coloured dot + label showing the VERIFIED health
