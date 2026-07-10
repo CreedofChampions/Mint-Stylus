@@ -51,7 +51,12 @@ const RULES = {
   'ai.thinkingLevel': 'required|string|in:off,low,medium,high|default:off',
   'ai.contextSource': 'required|string|in:none,folder,mcp,both|default:none',
   'ai.contextFolder': 'optional|string|default:',
-  'ai.contextMcpUrl': 'optional|string|default:'
+  'ai.contextMcpUrl': 'optional|string|default:',
+  // Inline-query delimiters (default `/q … q/`). Optional strings; an empty value
+  // is treated as "use the default" in the detector, so clearing a field can
+  // never break the feature.
+  'ai.inlineQueryOpen': 'optional|string|default:/q',
+  'ai.inlineQueryClose': 'optional|string|default:q/'
 }
 
 export const VALIDATE_RULES = Object.values(RULES)
