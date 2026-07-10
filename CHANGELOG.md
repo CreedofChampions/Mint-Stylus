@@ -1,4 +1,13 @@
 <!-- Mint Stylus section (AI fork of Zettlr) — edited by AI from here -->
+# Mint Stylus 4.8.2 — 2026-07-10
+
+- **AI (provider) picker in the top bar**, next to Context / Model / Thinking. A
+  simple dropdown to switch which AI you're using — OpenRouter, WisGate, Ollama
+  Cloud, Z.ai, Ollama (local), or a Custom OpenAI-compatible endpoint — without
+  opening Preferences. It writes the same `ai.provider` setting Preferences uses
+  (the two stay in sync), and switching it reloads the Model list beside it. API
+  keys are still managed in Preferences → AI / onboarding.
+
 # Mint Stylus 4.8.1 — 2026-07-10
 
 - **Fix: the top-bar model picker now actually keeps your choice.** Selecting a
