@@ -67,6 +67,23 @@
               <option value="both">{{ trans('Both') }}</option>
             </select>
           </label>
+          <!-- GLOBAL AI-provider picker: choose WHICH AI (provider) every request
+               goes to. Writes ai.provider (the same key Preferences uses); changing
+               it reloads the Model list beside it. API keys stay in Preferences → AI
+               / onboarding — this is just the quick switch. -->
+          <label
+            class="ai-thinking-level ai-provider-picker"
+            v-bind:title="providerTitle"
+          >
+            <span class="ai-thinking-level-label">{{ trans('AI:') }}</span>
+            <select v-model="currentProvider">
+              <option
+                v-for="slug in providerSlugs"
+                v-bind:key="slug"
+                v-bind:value="slug"
+              >{{ providers[slug].label }}</option>
+            </select>
+          </label>
           <!-- GLOBAL model picker: choose the AI model for every request. Populated
                from the current provider's live model list; also accepts any typed
                model id. Writes ai.model (the same key Preferences uses). -->
@@ -242,6 +259,9 @@ import { getEditorForLeaf } from './ai-panel/active-editor-registry'
 import { type AISelection } from '@common/modules/markdown-editor/plugins/ai-selection-menu'
 import { type EditorView } from '@codemirror/view'
 import { trans } from '@common/i18n-renderer'
+// AI-CREATED FOR MINT STYLUS: provider catalogue for the top-bar AI (provider)
+// picker — the SAME source of truth Preferences and onboarding use.
+import { PROVIDERS, PROVIDER_SLUGS, DEFAULT_PROVIDER, isProviderSlug, getProviderInfo } from '@common/util/ai-providers'
 import localiseNumber from '@common/util/localise-number'
 import generateId from '@common/util/generate-id'
 import {
@@ -766,6 +786,33 @@ const pendingSummarizeSelection = ref<AISelection|null>(null)
 const thinkingLevel = computed<string>({
   get: () => String(configStore.config.ai.thinkingLevel ?? 'off'),
   set: (value: string) => { configStore.setConfigValue('ai.thinkingLevel', value) }
+})
+
+// AI-CREATED FOR MINT STYLUS: the GLOBAL AI-provider picker (top-right, before
+// Model). Choose WHICH AI (provider) every request goes to. Backed by the reactive
+// config store (ai.provider — the SAME key Preferences uses), so the top bar and
+// Preferences never drift; the main-process AIProvider resolves the endpoint +
+// default model from the provider on every request. Setting it triggers the
+// existing `watch(ai.provider)` above, which reloads the Model datalist — matching
+// Preferences' onProviderChange (which likewise reloads models and leaves ai.model
+// alone). API keys are managed in Preferences → AI / onboarding, not here.
+const providers = PROVIDERS
+const providerSlugs = PROVIDER_SLUGS
+const currentProvider = computed<string>({
+  get: () => {
+    const slug = String(configStore.config.ai.provider ?? '')
+    return isProviderSlug(slug) ? slug : DEFAULT_PROVIDER
+  },
+  set: (value: string) => {
+    if (isProviderSlug(value)) {
+      configStore.setConfigValue('ai.provider', value)
+    }
+  }
+})
+
+const providerTitle = computed<string>(() => {
+  const label = getProviderInfo(currentProvider.value).label
+  return trans('AI provider: every request goes to %s. Switch providers here; set the provider\'s API key in Preferences → AI.', label)
 })
 
 // AI-CREATED FOR MINT STYLUS: the GLOBAL model picker (top-right, next to
