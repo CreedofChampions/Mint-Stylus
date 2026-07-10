@@ -1893,11 +1893,21 @@ function getToolbarButtonDisplay (configName: keyof ConfigOptions['displayToolba
   display: flex;
   align-items: center;
   gap: 8px;
+  row-gap: 4px;
   padding: 0 8px;
+  /* Never let the AI controls (esp. the working-state badge) clip off the right
+     edge on a narrow window: wrap to a second line instead. On a wide window the
+     question bar grows and everything stays on one line. */
+  flex-wrap: wrap;
 }
 
 .question-bar-row .ai-question-bar {
-  flex: 1 1 auto;
+  /* Small flex-basis (NOT its 100%/480px width) so, with flex-wrap on the row,
+     the question bar shares the first line with the AI controls and only wraps
+     them to a second line when the window is genuinely too narrow — rather than
+     claiming the whole first line and pushing every control down. It still grows
+     to fill leftover space on a wide window. */
+  flex: 1 1 120px;
   min-width: 0;
 }
 
@@ -1978,7 +1988,7 @@ body.dark .ai-thinking-level .ai-model-input {
    <select> width so a long selected id can't blow out the top-bar flex row; the
    native control clips/ellipsises the closed label, the popup still shows full. */
 .ai-thinking-level.ai-model-picker select {
-  max-width: 170px;
+  max-width: 130px;
 }
 
 /* Working-state status badge: a coloured dot + label showing the VERIFIED health
