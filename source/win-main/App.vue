@@ -67,6 +67,32 @@
               <option value="both">{{ trans('Both') }}</option>
             </select>
           </label>
+          <!-- GLOBAL model picker: choose the AI model for every request. Populated
+               from the current provider's live model list; also accepts any typed
+               model id. Writes ai.model (the same key Preferences uses). -->
+          <label
+            class="ai-thinking-level ai-model-picker"
+            v-bind:title="modelTitle"
+          >
+            <span class="ai-thinking-level-label">{{ trans('Model:') }}</span>
+            <input
+              v-model="currentModel"
+              list="ai-topbar-model-list"
+              class="ai-model-input"
+              v-bind:placeholder="trans('default')"
+              autocomplete="off"
+              spellcheck="false"
+              v-on:change="onModelChange"
+              v-on:blur="onModelChange"
+            >
+            <datalist id="ai-topbar-model-list">
+              <option
+                v-for="id in modelOptions"
+                v-bind:key="id"
+                v-bind:value="id"
+              ></option>
+            </datalist>
+          </label>
           <label
             class="ai-thinking-level"
             v-bind:title="trans('Thinking level: how much reasoning effort the AI spends on every request (all AI features)')"
@@ -741,6 +767,49 @@ const thinkingLevel = computed<string>({
   get: () => String(configStore.config.ai.thinkingLevel ?? 'off'),
   set: (value: string) => { configStore.setConfigValue('ai.thinkingLevel', value) }
 })
+
+// AI-CREATED FOR MINT STYLUS: the GLOBAL model picker (top-right, next to
+// Thinking). A combobox: it is populated with the current provider's real model
+// list (window.ai.listModels) but also accepts any typed model id. Backed by the
+// reactive config store (ai.model — the SAME key Preferences uses), so the two
+// surfaces never drift; the main-process AIProvider reads ai.model on every
+// request. Empty = the provider's default model.
+const currentModel = computed<string>({
+  get: () => String(configStore.config.ai.model ?? ''),
+  set: (value: string) => { configStore.setConfigValue('ai.model', value.trim()) }
+})
+
+// v-model already writes on input; the explicit change/blur handler is a no-op
+// safety net so a stray browser autofill still persists.
+function onModelChange (): void {
+  configStore.setConfigValue('ai.model', String(configStore.config.ai.model ?? '').trim())
+}
+
+const modelTitle = computed<string>(() => {
+  const provider = String(configStore.config.ai.provider ?? '')
+  const m = currentModel.value
+  return m !== ''
+    ? trans('Model: %s (for every AI request). Pick from the list or type any id; blank = provider default.', m)
+    : trans('Model: using the %s provider default. Pick from the list or type any model id.', provider || 'current')
+})
+
+// The provider's real model list, fetched from main (fails quietly when there is
+// no key yet — the user can still type an id). Reloaded on mount and whenever the
+// provider changes.
+const modelOptions = ref<string[]>([])
+async function loadModels (): Promise<void> {
+  try {
+    const raw = await window.ai.listModels(String(configStore.config.ai.provider ?? '') || undefined)
+    const ids = (Array.isArray(raw) ? raw : [])
+      .map((m: any) => String(m?.id ?? m?.name ?? m ?? '').trim())
+      .filter((id: string) => id !== '')
+    modelOptions.value = Array.from(new Set(ids)).sort((a, b) => a.localeCompare(b)).slice(0, 300)
+  } catch (err) {
+    modelOptions.value = []
+  }
+}
+watch(() => configStore.config.ai.provider, () => { void loadModels() })
+onMounted(() => { void loadModels() })
 
 // AI-CREATED FOR MINT STYLUS: the GLOBAL context-source selector (top-right,
 // next to Thinking). 'none' | 'folder' | 'mcp'. Backed by the reactive config
@@ -1705,6 +1774,30 @@ function getToolbarButtonDisplay (configName: keyof ConfigOptions['displayToolba
 
 body.dark .ai-thinking-level select,
 body.dark .ai-thinking-level select option {
+  color: var(--grey-0);
+  background-color: var(--grey-6);
+  border-color: var(--grey-5);
+}
+
+/* The top-bar model combobox mirrors the select styling (legible in both themes)
+   and is a touch wider since model ids are long. */
+.ai-thinking-level .ai-model-input {
+  height: 20px;
+  width: 130px;
+  font-size: 11px;
+  color: var(--grey-7);
+  background-color: var(--grey-0);
+  border: 1px solid var(--grey-2);
+  border-radius: 10px;
+  padding: 0 6px;
+}
+
+.ai-thinking-level .ai-model-input::placeholder {
+  color: var(--grey-4);
+  opacity: 0.8;
+}
+
+body.dark .ai-thinking-level .ai-model-input {
   color: var(--grey-0);
   background-color: var(--grey-6);
   border-color: var(--grey-5);

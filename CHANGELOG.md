@@ -1,4 +1,12 @@
 <!-- Mint Stylus section (AI fork of Zettlr) — edited by AI from here -->
+# Mint Stylus 4.8.0 — 2026-07-09
+
+- **Model picker in the top bar**, next to Context and Thinking: choose the AI
+  model for every request without opening Preferences. It's a combobox populated
+  with the current provider's live model list, and it also accepts any typed
+  model id (blank = the provider's default). Backed by the same `ai.model` config
+  as Preferences, so the two stay in sync.
+
 # Mint Stylus 4.7.0 — 2026-07-09
 
 Mint Stylus is an AI-native fork of Zettlr, carrying its own version line from
