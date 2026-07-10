@@ -1,4 +1,11 @@
 <!-- Mint Stylus section (AI fork of Zettlr) — edited by AI from here -->
+# Mint Stylus 4.8.1 — 2026-07-10
+
+- **Fix: the top-bar model picker now actually keeps your choice.** Selecting a
+  model on `change`/`blur` used to re-read the throttled config store and write
+  the *stale* previous value back, silently reverting your pick. It now commits
+  the input's own value, so the model you choose is the model every request uses.
+
 # Mint Stylus 4.8.0 — 2026-07-09
 
 - **Model picker in the top bar**, next to Context and Thinking: choose the AI

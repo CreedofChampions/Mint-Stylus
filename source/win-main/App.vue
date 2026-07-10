@@ -779,10 +779,13 @@ const currentModel = computed<string>({
   set: (value: string) => { configStore.setConfigValue('ai.model', value.trim()) }
 })
 
-// v-model already writes on input; the explicit change/blur handler is a no-op
-// safety net so a stray browser autofill still persists.
-function onModelChange (): void {
-  configStore.setConfigValue('ai.model', String(configStore.config.ai.model ?? '').trim())
+// Commit on change/blur. Read the input's OWN value (the source of truth), NOT
+// configStore.config.ai.model — that reactive store is throttled to 50ms, so
+// right after v-model's `input` write it still holds the previous value and
+// re-writing it here would clobber the just-picked model.
+function onModelChange (event: Event): void {
+  const target = event.target as HTMLInputElement | null
+  configStore.setConfigValue('ai.model', (target?.value ?? '').trim())
 }
 
 const modelTitle = computed<string>(() => {
