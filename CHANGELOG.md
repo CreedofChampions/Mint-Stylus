@@ -1,4 +1,17 @@
 <!-- Mint Stylus section (AI fork of Zettlr) — edited by AI from here -->
+# Mint Stylus 4.8.5 — 2026-07-10
+
+- **The Model picker now shows the real state, not the commanded one.** With no
+  API key for the selected provider (or no endpoint for Custom), it no longer
+  offers a model list you can't actually use — it shows **Install key first** (or
+  **Set endpoint first**) and opens Preferences → AI when clicked. It re-checks
+  when you return from Preferences.
+- **Removed the Zettlr branding from setup.** The post-update screen's "See
+  what's changed" button (which opened Zettlr's website) is gone; the screen still
+  shows your version and build date.
+- **The Windows installer wizard is now Mint Stylus-branded** — the sidebar and
+  header graphics show the mint-leaf-stylus logo instead of the old Zettlr ζ mark.
+
 # Mint Stylus 4.8.4 — 2026-07-10
 
 - **The top bar now shows whether your AI actually works, not just what you set.**

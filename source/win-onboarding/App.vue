@@ -13,11 +13,6 @@
         <p id="version-string">
           v{{ version }}
         </p>
-        <p>
-          <button class="active" v-on:click="loadUrl(`https://zettlr.com/changelog?to_version=${version}`)">
-            {{ whatsChangedLabel }}
-          </button>
-        </p>
         <p class="small">
           {{ buildDateLabel }}
         </p>
@@ -187,7 +182,6 @@ const pages = [
 const updateCompleteHeading = trans('Update complete!')
 const updateCompleteMessage = trans('Mint Stylus has been updated. You are now running Mint Stylus')
 const getStartedLabel = trans('Get started')
-const whatsChangedLabel = trans('See what\'s changed')
 const buildDate = DateTime.fromISO(__BUILD_DATE__).toLocaleString({ dateStyle: 'full' })
 const buildDateLabel = trans('Build date: %s', buildDate)
 
@@ -263,10 +257,6 @@ function close () {
 
 function sendMessage (payload: OnboardingIPCMessage) {
   ipcRenderer.send('onboarding', payload)
-}
-
-function loadUrl (url: string) {
-  window.location.href = url
 }
 </script>
 
