@@ -1,4 +1,12 @@
 <!-- Mint Stylus section (AI fork of Zettlr) — edited by AI from here -->
+# Mint Stylus 4.8.6 — 2026-07-10
+
+- **You can now change the inline `/q … q/` question markers to anything you
+  want.** Under **Preferences → AI → Inline question markers**, set your own
+  opening and closing marker (e.g. `[[ai` … `]]`). The editor detects your custom
+  markers live as you type; blank keeps the default, and the single-line safety
+  rule still applies so a stray marker never runs away down the document.
+
 # Mint Stylus 4.8.5 — 2026-07-10
 
 - **The Model picker now shows the real state, not the commanded one.** With no

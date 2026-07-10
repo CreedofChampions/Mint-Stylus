@@ -136,4 +136,37 @@ describe('QQInline#detectInlineQuerySpans()', function () {
     strictEqual(spans[0].question, 'what is 2 plus 2?')
     strictEqual(input.slice(spans[0].from, spans[0].to), '/q what is 2 plus 2? q/')
   })
+
+  // --- Custom, user-configured delimiters (Mint Stylus: Preferences → AI) -----
+
+  it('should detect a span with fully custom multi-char markers', function () {
+    const input = 'Ask [[ai what is the capital of France? ]] please'
+    const spans = detectInlineQuerySpans(input, '[[ai', ']]')
+    strictEqual(spans.length, 1)
+    strictEqual(spans[0].question, 'what is the capital of France?')
+    strictEqual(input.slice(spans[0].from, spans[0].to), '[[ai what is the capital of France? ]]')
+  })
+
+  it('should NOT detect the default /q markers when custom markers are configured', function () {
+    const input = 'Ask /q ignored q/ here'
+    strictEqual(detectInlineQuerySpans(input, '[[ai', ']]').length, 0)
+  })
+
+  it('should keep the single-line rule with custom markers', function () {
+    const input = '[[ai spans one\nline only ]] nope'
+    strictEqual(detectInlineQuerySpans(input, '[[ai', ']]').length, 0)
+  })
+
+  it('should find two custom-marker spans and ignore an empty one', function () {
+    const input = '@@a first @@ text @@ @@ then @@a second @@'
+    const spans = detectInlineQuerySpans(input, '@@a', '@@')
+    strictEqual(spans.length, 2)
+    strictEqual(spans[0].question, 'first')
+    strictEqual(spans[1].question, 'second')
+  })
+
+  it('should return no spans when a marker is empty (feature-off safety net)', function () {
+    strictEqual(detectInlineQuerySpans('anything /q x q/', '', 'q/').length, 0)
+    strictEqual(detectInlineQuerySpans('anything /q x q/', '/q', '').length, 0)
+  })
 })

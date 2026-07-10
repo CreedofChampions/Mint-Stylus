@@ -348,7 +348,13 @@ export function getMarkdownExtensions (options: CoreExtensionOptions): Extension
           { role: 'user', content: question }
         ]
       })
-    }),
+    }, () => ({
+      // User-configurable inline-query delimiters (Preferences → AI). Read live
+      // from config each scan so a change applies immediately; empty falls back
+      // to the `/q … q/` defaults inside the plugin.
+      open: String(window.config?.get('ai.inlineQueryOpen') ?? '/q'),
+      close: String(window.config?.get('ai.inlineQueryClose') ?? 'q/')
+    })),
     // created by AI for Mint Stylus: the floating "Summarize | Command" bubble
     // shown above a non-empty selection. This module is created centrally and
     // has no direct access to the Pinia AI store, so the two button handlers

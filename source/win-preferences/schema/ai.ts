@@ -58,6 +58,26 @@ export function getAIFields (): PreferencesFieldset[] {
       ]
     },
     {
+      title: trans('Inline question markers'),
+      group: PreferencesGroups.AI,
+      infoString: trans('An inline AI question in the editor is written between these two markers — by default `/q your question q/`. Change either marker to whatever you like (for example `[[ai` and `]]`). Leave a field blank to keep its default; the change applies as you type.'),
+      help: undefined,
+      fields: [
+        {
+          type: 'text',
+          label: trans('Opening marker'),
+          model: 'ai.inlineQueryOpen',
+          reset: '/q'
+        },
+        {
+          type: 'text',
+          label: trans('Closing marker'),
+          model: 'ai.inlineQueryClose',
+          reset: 'q/'
+        }
+      ]
+    },
+    {
       title: trans('Context source'),
       group: PreferencesGroups.AI,
       infoString: trans('Plug a local folder group or an MCP server in as extra context for every AI request. It turns on automatically once set, and you can switch it with the "Context:" dropdown at the top of the editor.'),

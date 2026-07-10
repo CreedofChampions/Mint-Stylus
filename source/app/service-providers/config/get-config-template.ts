@@ -253,6 +253,12 @@ export interface ConfigOptions {
     contextSource: 'none'|'folder'|'mcp'|'both'
     contextFolder: string
     contextMcpUrl: string
+    // The inline-query delimiters. By default an inline AI question is written
+    // `/q … q/` in the editor; the user can change BOTH markers to anything they
+    // like under Preferences → AI (e.g. `[[ai` … `]]`). Empty falls back to the
+    // defaults so the feature can never be disabled by clearing a field.
+    inlineQueryOpen: string
+    inlineQueryClose: string
   }
   ui: {
     fileManagerSplitSize: [number, number]
@@ -348,7 +354,9 @@ export function getConfigTemplate (): ConfigOptions {
       // 'folder'/'mcp' the moment the user picks a folder or enters an MCP URL.
       contextSource: 'none', // none|folder|mcp
       contextFolder: '', // absolute path to a local folder group
-      contextMcpUrl: '' // MCP server URL (Streamable HTTP)
+      contextMcpUrl: '', // MCP server URL (Streamable HTTP)
+      inlineQueryOpen: '/q', // opener for an inline AI question — user-editable
+      inlineQueryClose: 'q/' // closer for an inline AI question — user-editable
     },
     // Visible attachment filetypes
     attachmentExtensions: [],

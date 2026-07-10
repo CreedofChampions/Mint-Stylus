@@ -103,55 +103,48 @@ export interface InlineQuerySpan {
  *
  * @return  The list of detected spans, in document order.
  */
-export function detectInlineQuerySpans (text: string): InlineQuerySpan[] {
+export function detectInlineQuerySpans (text: string, open: string = '/q', close: string = 'q/'): InlineQuerySpan[] {
   const spans: InlineQuerySpan[] = []
+  // Empty markers would match everywhere / never — treat as "feature off". The
+  // detector's callers already fall back to the `/q … q/` defaults, so this is a
+  // pure safety net.
+  if (open.length === 0 || close.length === 0) {
+    return spans
+  }
 
-  // Returns true if the character at `i` is a marker `q` (case-insensitive).
-  const isQ = (i: number): boolean => text[i] === 'q' || text[i] === 'Q'
+  // Case-INsensitive matching (preserves the original `/q` / `/Q` behaviour) over
+  // a lowercased copy; every offset maps 1:1 back onto `text`. SINGLE LINEAR PASS
+  // via indexOf — O(n) — so it never freezes the renderer on large documents.
+  const hay = text.toLowerCase()
+  const o = open.toLowerCase()
+  const c = close.toLowerCase()
 
-  // SINGLE LINEAR PASS. We track the first unmatched opener on the current
-  // line and pair it with the next same-line closer. This is equivalent to the
-  // previous per-opener closer scan (if the first opener on a line has no
-  // same-line closer, no later opener on that line can have one either, since
-  // any closer after the later opener would also lie after the first), but it
-  // visits every character exactly once — O(n) — where the nested scan was
-  // O(n²) on pathological documents full of lone openers and could freeze the
-  // renderer for seconds on large files.
-  let opener = -1
   let i = 0
   while (i < text.length) {
-    const ch = text[i]
-
-    if (ch === '\n') {
-      // Spans are single-line: a newline abandons any unmatched opener.
-      opener = -1
-      i++
+    const oi = hay.indexOf(o, i)
+    if (oi === -1) {
+      break
+    }
+    // The closer search starts AFTER the whole opener, so the two markers can
+    // never overlap on a shared character (keeps `/q/` and `/qq/` yielding none).
+    const afterOpen = oi + o.length
+    // Spans are SINGLE-LINE: the closer must be on the opener's own line, so a
+    // marker typed mid-document can't pair with an unrelated closer many lines
+    // away (e.g. a `…/faq/` URL) and swallow everything in between.
+    const nl = text.indexOf('\n', afterOpen)
+    const lineEnd = nl === -1 ? text.length : nl
+    const ci = hay.indexOf(c, afterOpen)
+    if (ci === -1 || ci >= lineEnd) {
+      // No closer on this opener's line — abandon it and hunt the next opener.
+      i = afterOpen
       continue
     }
-
-    if (opener === -1 && ch === '/' && isQ(i + 1)) {
-      opener = i
-      // Skip past the opener so its `q` can never double as a closer's `q`
-      // (hence `/q/` yields no span).
-      i += 2
-      continue
+    const question = text.slice(afterOpen, ci).trim()
+    if (question.length > 0) {
+      spans.push({ from: oi, to: ci + c.length, question })
     }
-
-    if (opener !== -1 && isQ(i) && text[i + 1] === '/') {
-      const from = opener
-      const to = i + 2 // include the closing `q/`
-      const question = text.slice(opener + 2, i).trim()
-      if (question.length > 0) {
-        spans.push({ from, to, question })
-      }
-      // Whether emitted or skipped (empty question), resume after the closer so
-      // none of its characters are reused; a later opener may still pair.
-      opener = -1
-      i += 2
-      continue
-    }
-
-    i++
+    // Resume just past the closer (non-overlapping), emitted or not.
+    i = ci + c.length
   }
 
   return spans
@@ -283,7 +276,20 @@ function isProtected (state: EditorState, pos: number): boolean {
  *
  * @return  A CodeMirror {@link Extension}.
  */
-export function qqInline (askAI: (question: string) => Promise<string>): Extension {
+export function qqInline (
+  askAI: (question: string) => Promise<string>,
+  getDelimiters: () => { open: string, close: string } = () => ({ open: '/q', close: 'q/' })
+): Extension {
+  // Resolve the current inline-query delimiters, sanitising each: an empty or
+  // multi-line marker falls back to the default, so the feature can never be
+  // turned off (or made to match a newline) by a bad configured value.
+  const resolveDelimiters = (): { open: string, close: string } => {
+    let { open, close } = getDelimiters()
+    if (typeof open !== 'string' || open.length === 0 || open.includes('\n')) { open = '/q' }
+    if (typeof close !== 'string' || close.length === 0 || close.includes('\n')) { close = 'q/' }
+    return { open, close }
+  }
+
   const plugin = ViewPlugin.fromClass(class {
     private timeout: number | null = null
     private nextId = 1
@@ -305,12 +311,14 @@ export function qqInline (askAI: (question: string) => Promise<string>): Extensi
         return
       }
 
-      // Only consider firing when a change actually inserted characters that
-      // could complete a closing `q/` (the trailing `/`). Cheap gate before the
-      // debounce.
+      // Only consider firing when a change actually inserted the final character
+      // of the (current) closing marker — the char that completes a span. Cheap
+      // gate before the debounce; reads the configured closer each time so a
+      // changed delimiter takes effect immediately.
+      const closeTrigger = resolveDelimiters().close.slice(-1)
       let mightHaveClosed = false
       update.changes.iterChanges((_fA, _tA, _fB, _tB, inserted) => {
-        if (inserted.length > 0 && inserted.toString().includes('/')) {
+        if (inserted.length > 0 && inserted.toString().includes(closeTrigger)) {
           mightHaveClosed = true
         }
       })
@@ -340,7 +348,8 @@ export function qqInline (askAI: (question: string) => Promise<string>): Extensi
     private maybeFire (view: EditorView): void {
       const state = view.state
       const doc = state.sliceDoc()
-      const spans = detectInlineQuerySpans(doc)
+      const { open, close } = resolveDelimiters()
+      const spans = detectInlineQuerySpans(doc, open, close)
 
       if (spans.length === 0) {
         return
