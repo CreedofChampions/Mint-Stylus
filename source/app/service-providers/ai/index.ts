@@ -137,6 +137,7 @@ const PLAINTEXT_PREFIX = 'plaintext:'
 export type AIProviderIPCAPI = IPCAPI<{
   'list-models': { provider?: string, baseURL?: string }
   'validate-key': { provider?: string, baseURL?: string }
+  'test-connection': { provider?: string, baseURL?: string, model?: string }
   'chat': {
     provider?: string
     baseURL?: string
@@ -306,6 +307,8 @@ export default class AIProvider extends ProviderContract {
         return await this._listModels(payload.payload)
       case 'validate-key':
         return await this._validateKey(payload.payload)
+      case 'test-connection':
+        return await this._testConnection(payload.payload)
       case 'chat':
         return await this._chat(payload.payload)
       case 'chat-stream':
@@ -599,6 +602,49 @@ export default class AIProvider extends ProviderContract {
       throw new Error('[AIProvider] No OpenRouter key is stored to validate.')
     }
     return await validateOpenRouterKey(apiKey, baseURL)
+  }
+
+  /**
+   * Probe whether the given provider+model+key ACTUALLY works, by making a real,
+   * minimal completion (a 1-token "ping"). This is the source of truth for the UI
+   * status: the top bar must show the *working* state, never merely the commanded
+   * (config-was-written) state. It bypasses style/context/search assembly so it
+   * tests only the outbound provider→model→key→endpoint path.
+   *
+   * Never throws — always resolves to { ok, error? } so the renderer can render a
+   * red/green status. Friendly pre-checks catch the two "commanded but can't work"
+   * cases (no key, or Custom with no endpoint) before spending a network round-trip.
+   */
+  private async _testConnection (payload: { provider?: string, baseURL?: string, model?: string }): Promise<{ ok: boolean, error?: string, provider: string, model: string }> {
+    const provider = this._resolveProvider(payload.provider)
+    const baseURL = this._resolveBaseURL(provider, payload.baseURL)
+    const model = this._resolveModel(provider, payload.model)
+    const info = getProviderInfo(provider)
+    try {
+      if (provider === 'custom' && baseURL.trim() === '') {
+        return { ok: false, error: 'No endpoint URL set for the Custom provider (Preferences → AI).', provider, model }
+      }
+      const apiKey = await this._decryptKey(provider)
+      if (info.needsKey && apiKey === '') {
+        return { ok: false, error: `No API key set for ${info.label}. Add one in Preferences → AI.`, provider, model }
+      }
+      // The real probe. Any non-throwing response (even empty) proves the pipeline
+      // works with THIS model; a throw carries the actual reason (bad key, model
+      // not found, endpoint unreachable, …).
+      await chatCompletion({
+        baseURL,
+        apiKey,
+        model,
+        messages: [ { role: 'user', content: 'ping' } ],
+        stream: false,
+        extraHeaders: this._extraHeaders(provider),
+        maxTokens: 1
+      })
+      return { ok: true, provider, model }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      return { ok: false, error: message, provider, model }
+    }
   }
 
   // ==========================================================================

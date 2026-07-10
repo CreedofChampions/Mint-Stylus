@@ -129,6 +129,21 @@
               <option value="high">{{ trans('High') }}</option>
             </select>
           </label>
+          <!-- WORKING-STATE status: a setting is not "set" until it actually works.
+               This badge makes a real minimal request with the selected provider +
+               model and shows the VERIFIED result (Ready / Not working / Checking),
+               never just the commanded config. Auto-re-checks on every AI change;
+               click to re-check (e.g. after adding a key in Preferences). -->
+          <button
+            type="button"
+            class="ai-thinking-level ai-status-badge"
+            v-bind:class="'ai-status-' + aiStatus"
+            v-bind:title="aiStatusTitle"
+            v-on:click="runAiHealthCheck()"
+          >
+            <span class="ai-status-dot"></span>
+            <span class="ai-thinking-level-label">{{ aiStatusLabel }}</span>
+          </button>
         </div>
         <!-- Another split view in the right side -->
         <SplitView
@@ -892,6 +907,80 @@ async function loadModels (): Promise<void> {
 }
 watch(() => configStore.config.ai.provider, () => { void loadModels() })
 onMounted(() => { void loadModels() })
+
+// AI-CREATED FOR MINT STYLUS: WORKING-STATE health check. A picked provider/model
+// is only meaningful if it actually responds — so we don't trust the commanded
+// config; we PROBE it (a real minimal completion via window.ai.testConnection) and
+// the top-bar badge reflects the verified result. Re-runs (debounced) on every
+// provider/model change and on mount; the badge is also click-to-recheck (e.g.
+// right after adding a key in Preferences, which doesn't change provider/model).
+type AiHealthStatus = 'idle' | 'testing' | 'ok' | 'error'
+const aiStatus = ref<AiHealthStatus>('idle')
+const aiStatusError = ref<string>('')
+// Monotonic token so a slow probe that returns after a newer one can't overwrite
+// the fresher result (race guard).
+let aiHealthSeq = 0
+let aiHealthTimer: ReturnType<typeof setTimeout> | undefined
+
+async function runAiHealthCheck (): Promise<void> {
+  const seq = ++aiHealthSeq
+  aiStatus.value = 'testing'
+  aiStatusError.value = ''
+  try {
+    const res = await window.ai.testConnection({
+      provider: currentProvider.value,
+      model: currentModel.value
+    })
+    if (seq !== aiHealthSeq) {
+      return // superseded by a newer check — ignore this stale result
+    }
+    if (res.ok) {
+      aiStatus.value = 'ok'
+    } else {
+      aiStatus.value = 'error'
+      aiStatusError.value = res.error ?? trans('The selected AI did not respond.')
+    }
+  } catch (err: any) {
+    if (seq !== aiHealthSeq) {
+      return
+    }
+    aiStatus.value = 'error'
+    aiStatusError.value = err?.message ?? String(err)
+  }
+}
+
+function scheduleAiHealthCheck (): void {
+  if (aiHealthTimer !== undefined) {
+    clearTimeout(aiHealthTimer)
+  }
+  aiHealthTimer = setTimeout(() => { void runAiHealthCheck() }, 600)
+}
+
+// Re-probe whenever the effective AI selection changes (provider, model, or the
+// custom base URL for the Custom provider).
+watch(
+  () => [ configStore.config.ai.provider, configStore.config.ai.model, configStore.config.ai.baseURL ],
+  () => { scheduleAiHealthCheck() }
+)
+onMounted(() => { void runAiHealthCheck() })
+
+const aiStatusLabel = computed<string>(() => {
+  switch (aiStatus.value) {
+    case 'testing': return trans('Checking…')
+    case 'ok': return trans('Ready')
+    case 'error': return trans('Not working')
+    default: return trans('Test AI')
+  }
+})
+
+const aiStatusTitle = computed<string>(() => {
+  switch (aiStatus.value) {
+    case 'testing': return trans('Checking whether the selected AI actually responds…')
+    case 'ok': return trans('Verified: the selected provider and model responded to a live request. Click to re-check.')
+    case 'error': return trans('This AI is NOT working: %s — click to re-check (add a key in Preferences → AI if needed).', aiStatusError.value)
+    default: return trans('Click to check whether the selected AI actually works (sends a tiny live request).')
+  }
+})
 
 // AI-CREATED FOR MINT STYLUS: the GLOBAL context-source selector (top-right,
 // next to Thinking). 'none' | 'folder' | 'mcp'. Backed by the reactive config
@@ -1890,5 +1979,34 @@ body.dark .ai-thinking-level .ai-model-input {
    native control clips/ellipsises the closed label, the popup still shows full. */
 .ai-thinking-level.ai-model-picker select {
   max-width: 170px;
+}
+
+/* Working-state status badge: a coloured dot + label showing the VERIFIED health
+   of the selected AI — green = a live request succeeded, red = it failed (tooltip
+   has the reason), amber pulse = checking. It's a <button> (click to re-check) so
+   it reads as an action, not another config select. */
+.ai-thinking-level.ai-status-badge {
+  border: none;
+  background: transparent;
+  font: inherit;
+  padding: 0 4px;
+  gap: 5px;
+}
+.ai-status-badge .ai-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background-color: var(--grey-4);
+}
+.ai-status-ok .ai-status-dot { background-color: #2ecc71; }
+.ai-status-error .ai-status-dot { background-color: #e74c3c; }
+.ai-status-testing .ai-status-dot {
+  background-color: #f39c12;
+  animation: ai-status-pulse 1s ease-in-out infinite;
+}
+@keyframes ai-status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
 }
 </style>
