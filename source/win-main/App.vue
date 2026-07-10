@@ -84,31 +84,38 @@
               >{{ providers[slug].label }}</option>
             </select>
           </label>
-          <!-- GLOBAL model picker: choose the AI model for every request. Populated
-               from the current provider's live model list; also accepts any typed
-               model id. Writes ai.model (the same key Preferences uses). -->
+          <!-- GLOBAL model picker: choose the AI model for every request. A real
+               dropdown (like Context/AI/Thinking) listing the current provider's
+               live models, plus "(default)" and a "Custom…" entry that reveals a
+               text box for any model id. Writes ai.model (the key Preferences uses). -->
           <label
             class="ai-thinking-level ai-model-picker"
             v-bind:title="modelTitle"
           >
             <span class="ai-thinking-level-label">{{ trans('Model:') }}</span>
-            <input
-              v-model="currentModel"
-              list="ai-topbar-model-list"
-              class="ai-model-input"
-              v-bind:placeholder="trans('default')"
-              autocomplete="off"
-              spellcheck="false"
-              v-on:change="onModelChange"
-              v-on:blur="onModelChange"
+            <select
+              v-if="!modelCustomMode"
+              v-model="modelSelectValue"
             >
-            <datalist id="ai-topbar-model-list">
+              <option value="">{{ trans('(default)') }}</option>
               <option
-                v-for="id in modelOptions"
+                v-for="id in modelSelectOptions"
                 v-bind:key="id"
                 v-bind:value="id"
-              ></option>
-            </datalist>
+              >{{ id }}</option>
+              <option value="__custom__">{{ trans('Custom…') }}</option>
+            </select>
+            <input
+              v-else
+              v-model="currentModel"
+              class="ai-model-input"
+              v-bind:placeholder="trans('model id')"
+              autocomplete="off"
+              spellcheck="false"
+              ref="modelCustomInput"
+              v-on:keydown.enter="modelCustomMode = false"
+              v-on:blur="modelCustomMode = false"
+            >
           </label>
           <label
             class="ai-thinking-level"
@@ -826,14 +833,39 @@ const currentModel = computed<string>({
   set: (value: string) => { configStore.setConfigValue('ai.model', value.trim()) }
 })
 
-// Commit on change/blur. Read the input's OWN value (the source of truth), NOT
-// configStore.config.ai.model — that reactive store is throttled to 50ms, so
-// right after v-model's `input` write it still holds the previous value and
-// re-writing it here would clobber the just-picked model.
-function onModelChange (event: Event): void {
-  const target = event.target as HTMLInputElement | null
-  configStore.setConfigValue('ai.model', (target?.value ?? '').trim())
-}
+// The Model control is a real <select> (like Context/AI/Thinking) so the model
+// list is an obvious dropdown, not a bare text field. `modelCustomMode` swaps it
+// for a text input when the user picks "Custom…", preserving the type-any-id
+// ability. `modelCustomInput` lets us focus that box the instant it appears.
+const modelCustomMode = ref<boolean>(false)
+const modelCustomInput = ref<HTMLInputElement | null>(null)
+
+// The options the <select> lists: the provider's fetched models, PLUS the current
+// value if it is a custom id not in that list (so a model set in Preferences, or a
+// just-typed custom id, is never hidden and stays selected).
+const modelSelectOptions = computed<string[]>(() => {
+  const opts = [...modelOptions.value]
+  const cur = currentModel.value
+  if (cur !== '' && !opts.includes(cur)) {
+    opts.unshift(cur)
+  }
+  return opts
+})
+
+// Bridges the <select> to ai.model. '' = provider default. Picking "Custom…"
+// (value "__custom__") does NOT write config — it reveals the text box instead.
+const modelSelectValue = computed<string>({
+  get: () => currentModel.value, // always '' or present in modelSelectOptions
+  set: (value: string) => {
+    if (value === '__custom__') {
+      modelCustomMode.value = true
+      void nextTick().then(() => modelCustomInput.value?.focus())
+      return
+    }
+    modelCustomMode.value = false
+    currentModel.value = value
+  }
+})
 
 const modelTitle = computed<string>(() => {
   const provider = String(configStore.config.ai.provider ?? '')
@@ -1851,5 +1883,12 @@ body.dark .ai-thinking-level .ai-model-input {
   color: var(--grey-0);
   background-color: var(--grey-6);
   border-color: var(--grey-5);
+}
+
+/* Model ids can be long (e.g. ~anthropic/claude-fable-latest). Bound the model
+   <select> width so a long selected id can't blow out the top-bar flex row; the
+   native control clips/ellipsises the closed label, the popup still shows full. */
+.ai-thinking-level.ai-model-picker select {
+  max-width: 170px;
 }
 </style>

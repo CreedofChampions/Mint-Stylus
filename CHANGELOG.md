@@ -1,4 +1,13 @@
 <!-- Mint Stylus section (AI fork of Zettlr) — edited by AI from here -->
+# Mint Stylus 4.8.3 — 2026-07-10
+
+- **The Model picker is now a real dropdown.** It used to be a bare text field
+  showing "default" with the model list hidden behind a finicky datalist (no
+  dropdown arrow, so it didn't look or behave like a chooser). It's now a proper
+  `<select>` — matching Context / AI / Thinking — that lists the current
+  provider's models as an obvious dropdown, with **(default)** at the top and a
+  **Custom…** entry that reveals a text box for any model id you want to type.
+
 # Mint Stylus 4.8.2 — 2026-07-10
 
 - **AI (provider) picker in the top bar**, next to Context / Model / Thinking. A
