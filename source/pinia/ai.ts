@@ -200,6 +200,12 @@ declare global {
        */
       validateKey: (provider: string) => Promise<boolean>
       /**
+       * Probes whether a provider+model+key ACTUALLY works via a real minimal
+       * completion. Resolves { ok, error?, provider, model }. Never rejects — the
+       * source of truth for the UI's working-state status.
+       */
+      testConnection: (payload?: { provider?: string, model?: string }) => Promise<{ ok: boolean, error?: string, provider: string, model: string }>
+      /**
        * Persists (encrypts, in main) an API key for a provider. The plaintext
        * only travels inbound at save time; it is never read back out.
        */

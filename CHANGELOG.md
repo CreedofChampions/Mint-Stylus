@@ -1,4 +1,15 @@
 <!-- Mint Stylus section (AI fork of Zettlr) — edited by AI from here -->
+# Mint Stylus 4.8.4 — 2026-07-10
+
+- **The top bar now shows whether your AI actually works, not just what you set.**
+  A new status badge (right of Thinking) makes a real, tiny live request with the
+  selected provider + model and shows the **verified** result: **● Ready** (it
+  responded), **● Not working** (with the reason in the tooltip — e.g. no API key,
+  model not found, endpoint unreachable), or **● Checking…**. It re-checks
+  automatically whenever you change the provider, model, or endpoint, and you can
+  click it to re-check (e.g. right after adding a key in Preferences). Picking a
+  setting is no longer trusted until it's proven to work.
+
 # Mint Stylus 4.8.3 — 2026-07-10
 
 - **The Model picker is now a real dropdown.** It used to be a bare text field

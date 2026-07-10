@@ -210,6 +210,21 @@ contextBridge.exposeInMainWorld('ai', {
     }
   },
   /**
+   * Probe whether a provider+model+key ACTUALLY works by making a real minimal
+   * completion. Resolves { ok, error?, provider, model } — the source of truth for
+   * the top-bar status (the working state, not the merely-commanded one). Never
+   * rejects: a failed probe comes back as { ok: false, error }.
+   */
+  testConnection: async (payload?: { provider?: string, model?: string }): Promise<{ ok: boolean, error?: string, provider: string, model: string }> => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      return await invokeAI({ command: 'test-connection', payload: payload ?? {} })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      return { ok: false, error: message, provider: String(payload?.provider ?? ''), model: String(payload?.model ?? '') }
+    }
+  },
+  /**
    * Persists (encrypts, in main) an API key for a provider. The plaintext key
    * only travels inbound here at save time; it is never read back out.
    */
