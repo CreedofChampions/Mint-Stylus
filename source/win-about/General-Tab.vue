@@ -3,6 +3,9 @@
     <h1 id="main-heading">
       Mint Stylus {{ configStore.config.version }}
     </h1>
+    <p id="build-id">
+      build {{ buildCommit }} · {{ buildDate }}
+    </p>
     <p id="uuid">
       UUID: {{ configStore.config.uuid }}
     </p>
@@ -88,6 +91,13 @@ import { useConfigStore } from 'source/pinia'
 
 const configStore = useConfigStore()
 
+// Baked in at build time (see webpack DefinePlugin). Shown so every build is
+// uniquely identifiable at a glance, even when the semver has not changed.
+const buildCommit = typeof __GIT_COMMIT_HASH__ === 'string' && __GIT_COMMIT_HASH__.trim() !== ''
+  ? __GIT_COMMIT_HASH__.trim()
+  : 'dev'
+const buildDate = (__BUILD_DATE__ ?? '').slice(0, 10)
+
 const dialogIntro = trans('Mint Stylus is a fork of Zettlr, a project by Hendrik Erz, and is licensed under the GNU GPL v3 license. It is Open Source, free of charge and based upon the Electron framework. Mint Stylus would like to thank the Zettlr project and the developers of Electron, the Node.js framework and the CodeMirror editor for their work. Without them, Mint Stylus would not be possible. Below you can find all projects that Mint Stylus uses.')
 const CSLInfo = trans('Mint Stylus makes use of citeproc to display citations directly in the editor. To this end, Mint Stylus uses the CitationStyleLanguage (CSL) language and style files. The files have been shipped unaltered with author metadata. More information:')
 const nodeTrademark = trans('All logos and brand names are subject to their rightful owners. Besides using their code, Mint Stylus is in no way affiliated with any of these projects. Node.js is a trademark of Joyent, Inc.')
@@ -105,6 +115,13 @@ div#about-general {
 
   h1#main-heading {
     margin-bottom: 0px;
+  }
+
+  p#build-id {
+    font-family: Inconsolata, monospace;
+    color: rgb(120, 120, 120);
+    font-size: 72%;
+    margin: -4px 0 2px 0;
   }
 
   p#uuid {

@@ -1,3 +1,24 @@
+<!-- Mint Stylus section (AI fork of Zettlr) — edited by AI from here -->
+# Mint Stylus 4.7.0 — 2026-07-09
+
+Mint Stylus is an AI-native fork of Zettlr, carrying its own version line from
+**4.7.0** (built on the Zettlr 4.6.0 base below). **Bump before every shared
+build:** `node scripts/bump-version.mjs` (patch). Each build is also uniquely
+identified by the git commit + build date on the About window.
+
+- **AI built in** (keys/HTTP stay in the main process): inline `/q your question q/`
+  answered in the doc; selection bubble with one-click **Shorten · Summarize ·
+  Synonyms · Alternatives** + **More…**; commands act only on the selection with
+  the page as context; editable/add-able command prompts; **Context source**
+  (Folder / MCP / Both); global **Thinking** dial.
+- **Providers**: OpenRouter, WisGate, Ollama (cloud/local), Z.ai, or any Custom
+  OpenAI-compatible endpoint. Keys stored encrypted, never in the build.
+- Full Mint Stylus rebrand + AI-key onboarding step.
+- Adversarial-review hardening: document-integrity guards on apply/recover, no
+  document→search-API leakage, concurrency guards, `window.prompt` replacements.
+
+---
+
 # Upcoming
 
 ## GUI and Functionality
