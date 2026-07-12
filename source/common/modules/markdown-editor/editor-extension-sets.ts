@@ -341,12 +341,18 @@ export function getMarkdownExtensions (options: CoreExtensionOptions): Extension
     // created by AI for Mint Stylus: inline `/q … q/` questions answered by the
     // AIProvider (main process) via the narrow `window.ai` bridge. The renderer
     // only ever sends the question text and receives markdown back — no key.
-    qqInline(async (question: string): Promise<string> => {
+    qqInline(async (question: string, pageContext: string): Promise<string> => {
       return await window.ai.chat({
         messages: [
-          { role: 'system', content: 'You are an inline writing assistant. Answer the question concisely. Respond in Markdown.' },
+          { role: 'system', content: 'You are an inline writing assistant. The user\'s FULL document is provided to you as context so you understand what they are writing about. Answer ONLY their question, concisely and in Markdown. Your answer will be inserted at the exact spot of the question — do NOT restate, summarise, or edit the rest of the document.' },
           { role: 'user', content: question }
-        ]
+        ],
+        // Send the whole document as context-only (the main process frames it as
+        // "the full document … use it as context") so `/q` understands the
+        // surrounding text; only the answer replaces the `/q … q/` span. The doc
+        // is a SEPARATE field (not the user turn), so it never trips the
+        // "say 'search' to web-search" trigger — that still keys off the question.
+        pageContext
       })
     }, () => ({
       // User-configurable inline-query delimiters (Preferences → AI). Read live

@@ -270,14 +270,16 @@ function isProtected (state: EditorState, pos: number): boolean {
  * @param   askAI  Async callback that receives the question text and resolves
  *                 with a Markdown answer string. Injected so the plugin has no
  *                 direct dependency on the IPC / AIProvider layer (and can be
- *                 unit-tested with a stub). All key handling / HTTP happens in
- *                 the Electron main process behind this callback; the renderer
- *                 never sees a key.
+ *                 unit-tested with a stub). It also receives the WHOLE current
+ *                 document as `pageContext` so the model understands what the
+ *                 user is writing about — the answer still only replaces the
+ *                 `/q … q/` span. All key handling / HTTP happens in the Electron
+ *                 main process behind this callback; the renderer never sees a key.
  *
  * @return  A CodeMirror {@link Extension}.
  */
 export function qqInline (
-  askAI: (question: string) => Promise<string>,
+  askAI: (question: string, pageContext: string) => Promise<string>,
   getDelimiters: () => { open: string, close: string } = () => ({ open: '/q', close: 'q/' })
 ): Extension {
   // Resolve the current inline-query delimiters, sanitising each: an empty or
@@ -399,6 +401,11 @@ export function qqInline (
       const id = this.nextId++
       const marker = makeMarker(id)
 
+      // Capture the WHOLE document (with the query still in place) so the model
+      // can understand what the user is writing about. It is sent as context
+      // only — just the answer replaces the span; the rest is never edited.
+      const pageContext = view.state.sliceDoc()
+
       // Step 1: replace the `/q … q/` span text with the sentinel marker. We
       // decorate over the marker with the loading widget in the same dispatch.
       view.dispatch({
@@ -408,7 +415,7 @@ export function qqInline (
 
       this.inFlight.add(id)
 
-      askAI(span.question)
+      askAI(span.question, pageContext)
         .then(answer => {
           this.resolve(view, id, marker, answer)
         })
