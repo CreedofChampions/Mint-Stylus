@@ -1,4 +1,13 @@
 <!-- Mint Stylus section (AI fork of Zettlr) — edited by AI from here -->
+# Mint Stylus 4.8.7 — 2026-07-10
+
+- **Inline `/q` questions now read your whole document for context.** An inline
+  question now understands the full text you're working on (like the highlight
+  commands do) so its answer fits what you're writing — but it still only inserts
+  the answer at the `/q … q/` spot and never edits the rest of the document.
+  Saying "search" in the question still triggers web search; your document text
+  won't accidentally trip it.
+
 # Mint Stylus 4.8.6 — 2026-07-10
 
 - **You can now change the inline `/q … q/` question markers to anything you
