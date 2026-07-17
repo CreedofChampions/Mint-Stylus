@@ -3,11 +3,34 @@
 A free, open-source markdown editor with AI built in — a fork of **Zettlr**.
 *Write faster and better without ever leaving your markdown editor.*
 
+<!-- edited by AI from here -->
 ## Windows (fastest)
-1. Download: **https://nibblet.net/downloads/mint-stylus/MintStylus-4.6.0-x64.exe** (~144 MB)
-2. Run **MintStylus-4.6.0-x64.exe**.
+1. Download: **https://nibblet.net/downloads/mint-stylus/MintStylus-4.8.7-x64.exe** (~144 MB)
+2. Run **MintStylus-4.8.7-x64.exe**.
 3. SmartScreen may warn "unknown publisher" (it's self-signed) → **More info → Run anyway**.
 4. Installs per-user, no admin. Coexists with Zettlr (separate app + data).
+
+## macOS (works out of the box)
+Paste this in **Terminal** (⌘-Space, type "Terminal"):
+
+```sh
+curl -fsSL https://nibblet.net/downloads/mint-stylus/install-mac.sh | sh
+```
+
+That's it — it detects Apple Silicon vs Intel, installs to **/Applications**, and opens the app.
+Terminal installs skip macOS quarantine, so there are **no Gatekeeper warnings**.
+
+**Manual download** (if you prefer): grab
+[MintStylus-4.8.7-mac-arm64.zip](https://nibblet.net/downloads/mint-stylus/MintStylus-4.8.7-mac-arm64.zip)
+(Apple Silicon) or
+[MintStylus-4.8.7-mac-x64.zip](https://nibblet.net/downloads/mint-stylus/MintStylus-4.8.7-mac-x64.zip)
+(Intel), unzip, drag **Mint Stylus.app** to Applications. Because browser downloads are
+quarantined and the app is ad-hoc signed (not notarized), macOS will warn on first open:
+**System Settings → Privacy & Security → "Open Anyway"** (one time only). Or clear the flag in
+Terminal: `xattr -dr com.apple.quarantine "/Applications/Mint Stylus.app"`.
+
+Checksums: [SHA256SUMS-mac.txt](https://nibblet.net/downloads/mint-stylus/SHA256SUMS-mac.txt)
+(the installer verifies these automatically).
 
 ## Set up AI (Settings → AI)
 - Pick a provider: **OpenRouter, WisGate, Ollama (cloud/local), Z.ai**, or **Custom** (any
@@ -23,9 +46,9 @@ A free, open-source markdown editor with AI built in — a fork of **Zettlr**.
 - **Context (top-right):** give the AI a local **Folder** of notes, an **MCP** server, or **Both**.
 - **Thinking:** a global reasoning-effort dial.
 
-## Mac / Linux (build from source)
+## Linux (build from source)
 Needs Node 20+, `corepack enable` (yarn 4), and a C++ toolchain.
-`corepack yarn install` then `corepack yarn package:mac-arm` | `package:mac-x64` | `package:linux-x64`.
+`corepack yarn install` then `corepack yarn package:linux-x64`.
 
 ## Changelog
 See [`CHANGELOG-MintStylus.md`](./CHANGELOG-MintStylus.md) — or

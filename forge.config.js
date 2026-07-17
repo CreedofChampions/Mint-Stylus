@@ -99,6 +99,20 @@ module.exports = {
       // build was based off on.
       process.env.GIT_COMMIT_HASH = await getGitHash()
 
+      // <!-- edited by AI from here --> The static `extraResource` below is
+      // gated on the HOST platform (process.platform), which drops the macOS
+      // icon resources when cross-packaging a darwin build from Linux/Windows.
+      // Add them here based on the TARGET platform instead (guarded so a
+      // native macOS build doesn't push them twice). NOTE: Assets.car is
+      // deliberately NOT bundled — it is upstream Zettlr's Liquid Glass icon,
+      // which is not rebranded; without it macOS falls back to the Mint
+      // Stylus icon.icns everywhere.
+      if (targetPlatform === 'darwin' && process.platform !== 'darwin') {
+        forgeConfig.packagerConfig.extraResource.push(
+          path.join(__dirname, 'resources/icons/icon.code.icns')
+        )
+      }
+
       // Second, we need to make sure we can bundle Pandoc.
       if (process.env.BUNDLE_PANDOC === '0') {
         console.warn('Detected environment variable BUNDLE_PANDOC -- this build will not be bundled with Pandoc!')
@@ -188,13 +202,24 @@ module.exports = {
       }
     }
   },
-  rebuildConfig: {
-    // Since we must build native modules for both x64 as well as arm64, we have
-    // to explicitly build it everytime for the correct architecture
-    force: false // NOTE: By now covered by the global flag on packaging.
-  },
+  // <!-- edited by AI from here --> When cross-packaging macOS builds from a
+  // non-mac host there is no darwin toolchain, so native-module rebuilds must
+  // be skipped entirely (the two natives — fsevents and nodehun — are provided
+  // as prebuilt darwin binaries instead). Gated behind an env var so normal
+  // native builds keep the upstream behavior.
+  rebuildConfig: process.env.MINT_STYLUS_SKIP_REBUILD === '1'
+    ? { onlyModules: [] }
+    : {
+        // Since we must build native modules for both x64 as well as arm64, we have
+        // to explicitly build it everytime for the correct architecture
+        force: false // NOTE: By now covered by the global flag on packaging.
+      },
   packagerConfig: {
-    appBundleId: 'com.zettlr.app',
+    // <!-- edited by AI from here --> Mint Stylus has its own bundle identity
+    // (matches electron-builder's appId). Keeping upstream's com.zettlr.app
+    // would make LaunchServices conflate Mint Stylus with an installed Zettlr
+    // on macOS — breaking the "coexists with Zettlr" promise.
+    appBundleId: 'app.mintstylus',
     // This info.plist file contains file association for the app on macOS.
     extendInfo: './scripts/assets/info.plist',
     asar: {
