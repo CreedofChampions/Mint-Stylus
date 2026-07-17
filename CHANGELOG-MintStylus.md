@@ -6,6 +6,29 @@ assistant built into the editor. Bring your own key — nothing is bundled or sh
 
 ---
 
+<!-- edited by AI from here -->
+## v4.8.7 — 2026-07-16
+
+### Added — macOS support
+- **Native macOS builds** for Apple Silicon (`arm64`) and Intel (`x64`), with all features
+  included: the AI assistant, spellcheck (bundled darwin Hunspell binding), file watching
+  (fsevents), and a bundled darwin Pandoc 3.10 for exports.
+- **One-paste Terminal installer** (`install-mac.sh`) — installs to `/Applications` and opens
+  the app immediately. Terminal installs skip macOS quarantine, so there are no Gatekeeper
+  hoops. Manual `.zip` / `.tar.gz` downloads are also available.
+- Apps are **ad-hoc signed** (required on Apple Silicon). They are not notarized (no Apple
+  Developer account), so a browser-downloaded copy needs the usual right-click → Open /
+  "Open Anyway" dance — use the installer command instead.
+
+### Build infrastructure
+- macOS apps can now be **cross-packaged from a non-mac host**: mac icon resources follow the
+  *target* platform, darwin-only optional deps (fsevents) install on Linux via Yarn
+  `supportedArchitectures`, and native-module rebuilds can be skipped with
+  `MINT_STYLUS_SKIP_REBUILD=1` (prebuilt darwin binaries are injected instead).
+
+*(Changes between v4.6.1 and v4.8.6 — AI provider picker, inline `/q` context, working-state
+badge, and related fixes — are tracked in the git history.)*
+
 ## v4.6.0 — 2026-07-08
 
 First public release: the Zettlr markdown editor, rebranded and free, with AI baked right into the

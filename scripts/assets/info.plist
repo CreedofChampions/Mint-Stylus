@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
+<!-- edited by AI from here -->
 	<dict>
-    <key>CFBundleIconName</key>
-    <string>Zettlr</string>
 		<key>CFBundleDocumentTypes</key>
 		<array>
       <dict>
         <key>CFBundleTypeName</key>
-        <string>Zettlr Markdown document</string>
+        <string>Mint Stylus Markdown document</string>
         <key>CFBundleTypeRole</key>
         <string>Editor</string>
         <key>CFBundleTypeOSTypes</key>
@@ -31,7 +30,7 @@
       </dict>
       <dict>
         <key>CFBundleTypeName</key>
-        <string>Zettlr text document</string>
+        <string>Mint Stylus text document</string>
         <key>CFBundleTypeRole</key>
         <string>Editor</string>
         <key>CFBundleTypeOSTypes</key>
@@ -50,7 +49,7 @@
       </dict>
       <dict>
         <key>CFBundleTypeName</key>
-        <string>Zettlr Code Document</string>
+        <string>Mint Stylus Code Document</string>
         <key>CFBundleTypeRole</key>
         <string>Editor</string>
         <key>CFBundleTypeOSTypes</key>
