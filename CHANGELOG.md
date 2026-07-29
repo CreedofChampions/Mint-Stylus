@@ -1,4 +1,13 @@
 <!-- Mint Stylus section (AI fork of Zettlr) — edited by AI from here -->
+# Mint Stylus 4.8.8 — 2026-07-11
+
+- **Copy AI panel text easily.** The left AI panel (command output, conversation
+  replies, summarize options) now has a one-click **Copy** button on each block,
+  and all of that text is selectable so you can drag-copy it too. Copies the raw
+  text, not the formatted HTML.
+- (Reminder: inline `/q` sends your **whole document** as context — added in
+  4.8.7 — so answers fit what you're writing while only the answer is inserted.)
+
 # Mint Stylus 4.8.7 — 2026-07-10
 
 - **Inline `/q` questions now read your whole document for context.** An inline
