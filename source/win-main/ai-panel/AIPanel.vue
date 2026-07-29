@@ -38,6 +38,12 @@
           >
             <span class="option-bullet">•</span>
             <span class="option-text">{{ option.text }}</span>
+            <button
+              type="button"
+              class="ai-copy-btn ai-copy-btn-inline"
+              v-bind:title="trans('Copy this option')"
+              v-on:click.stop="copyText(option.text, 'opt' + idx)"
+            >{{ copiedId === 'opt' + idx ? trans('Copied') : trans('Copy') }}</button>
           </li>
         </ul>
 
@@ -127,12 +133,16 @@
           the untouched markdown, toggle the raw view below.
           eslint-disable-next-line vue/no-v-html
         -->
-        <!-- eslint-disable-next-line vue/no-v-html -->
-        <div
-          v-if="commandText.length > 0"
-          class="ai-command-output"
-          v-html="renderedCommandHTML"
-        ></div>
+        <div v-if="commandText.length > 0" class="ai-output-block">
+          <button
+            type="button"
+            class="ai-copy-btn"
+            v-bind:title="trans('Copy this text')"
+            v-on:click="copyText(commandText, 'cmd')"
+          >{{ copiedId === 'cmd' ? trans('Copied') : trans('Copy') }}</button>
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <div class="ai-command-output" v-html="renderedCommandHTML"></div>
+        </div>
       </template>
 
       <!-- ==================================================================
@@ -145,7 +155,15 @@
             v-bind:key="idx"
             v-bind:class="['ai-message', 'ai-message-' + message.role]"
           >
-            <span class="ai-message-role">{{ roleLabel(message.role) }}</span>
+            <span class="ai-message-role">
+              {{ roleLabel(message.role) }}
+              <button
+                type="button"
+                class="ai-copy-btn ai-copy-btn-inline"
+                v-bind:title="trans('Copy this message')"
+                v-on:click="copyText(message.content, 'msg' + idx)"
+              >{{ copiedId === 'msg' + idx ? trans('Copied') : trans('Copy') }}</button>
+            </span>
             <!-- eslint-disable-next-line vue/no-v-html -->
             <div class="ai-message-content" v-html="renderMarkdown(message.content)"></div>
           </div>
@@ -451,6 +469,29 @@ function roleLabel (role: AIChatMessage['role']): string {
 // ---------------------------------------------------------------------------
 
 /**
+ * One-click copy of any panel text to the clipboard. Copies the RAW text (the
+ * source of truth in the store), not the rendered HTML. `id` identifies which
+ * button was clicked so it can briefly show "Copied".
+ */
+const copiedId = ref<string>('')
+let copiedTimer: ReturnType<typeof setTimeout> | undefined
+function copyText (text: string, id: string): void {
+  const value = String(text ?? '')
+  if (value === '') {
+    return
+  }
+  navigator.clipboard.writeText(value)
+    .then(() => {
+      copiedId.value = id
+      if (copiedTimer !== undefined) {
+        clearTimeout(copiedTimer)
+      }
+      copiedTimer = setTimeout(() => { copiedId.value = '' }, 1200)
+    })
+    .catch(err => console.error('[AIPanel] copy failed', err))
+}
+
+/**
  * Closes the panel via the store so any other surface stays in sync.
  */
 function close (): void {
@@ -600,6 +641,47 @@ body div#ai-panel {
     color: rgb(131, 131, 131);
     text-align: center;
     margin: auto 0;
+  }
+
+  // --- Copy affordance + selectable output ---------------------------------
+  .ai-output-block {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ai-copy-btn {
+    align-self: flex-end;
+    padding: 2px 8px;
+    margin-bottom: 4px;
+    border: 1px solid rgba(128, 128, 128, 0.4);
+    border-radius: 6px;
+    background-color: transparent;
+    color: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover { background-color: rgba(0, 0, 0, 0.08); }
+  }
+
+  .ai-copy-btn-inline {
+    align-self: auto;
+    margin: 0 0 0 6px;
+    padding: 0 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    vertical-align: middle;
+  }
+
+  // All AI output text is manually selectable/copyable too (not just via button).
+  .ai-command-output, .ai-message-content {
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
+  }
+  .option-text, .recover-text {
+    user-select: text;
+    -webkit-user-select: text;
   }
 
   .ai-panel-subheading {

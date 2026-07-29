@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git://github.com/CreedofChampions/Mint-Stylus.git"
   },
-  "version": "4.8.7",
+  "version": "4.8.8",
   "license": "GPL-3.0",
   "description": "Your One-Stop Publication Workbench",
   "main": ".webpack/main",
