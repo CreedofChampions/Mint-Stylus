@@ -7,6 +7,23 @@ assistant built into the editor. Bring your own key — nothing is bundled or sh
 ---
 
 <!-- edited by AI from here -->
+## v4.8.8 — 2026-08-03
+
+### Licence and attribution
+- The app now states, in **Help → About Mint Stylus**, that it is a modified version of Zettlr,
+  when it was modified, that it is not affiliated with or endorsed by the Zettlr project, and
+  where to get the complete source code — as the GNU GPL v3 requires of a modified work.
+- The project's source is public at
+  [github.com/CreedofChampions/Mint-Stylus](https://github.com/CreedofChampions/Mint-Stylus),
+  with a full `NOTICE.md`, upstream's original README preserved alongside our own, and Zettlr's
+  authorship intact in the commit history.
+
+### Copy button
+- One-click **Copy** on AI answers, and AI output text is selectable.
+
+*No change to how the editor or the AI assistant behave — this is a licence-and-attribution
+release, rebuilt from the same code.*
+
 ## v4.8.7 — 2026-07-16
 
 ### Added — macOS support
