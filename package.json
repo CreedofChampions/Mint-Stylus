@@ -103,7 +103,7 @@
     "fix-path": "^5.0.0",
     "gemoji": "^8.1.0",
     "gettext-parser": "^9.0.2",
-    "got": "^11.8.6",
+    "got": "^15.1.0",
     "katex": "^0.17.0",
     "ky": "^2.0.2",
     "lang-criticmarkup": "^0.3.0",
