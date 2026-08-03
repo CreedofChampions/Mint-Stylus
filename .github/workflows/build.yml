@@ -55,8 +55,9 @@ name: Build
 on:
   # Releases must be manually started.
   workflow_dispatch: {}
-  schedule: # Every Monday at noon (UTC) we run a scheduled nightly build
-    - cron: '0 12 * * 1'
+  # Inherited from upstream Zettlr. Disabled in the Mint Stylus fork so this
+  # repository never auto-builds, auto-commits or auto-releases on a timer;
+  # run it by hand from the Actions tab instead. (edited by AI)
 
 # Defaults for every job and step in this workflow
 defaults:

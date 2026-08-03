@@ -10,9 +10,12 @@
     "type": "git",
     "url": "git://github.com/CreedofChampions/Mint-Stylus.git"
   },
+  "bugs": {
+    "url": "https://github.com/CreedofChampions/Mint-Stylus/issues"
+  },
   "version": "4.8.8",
   "license": "GPL-3.0",
-  "description": "Your One-Stop Publication Workbench",
+  "description": "A Markdown writing app with AI baked in — a fork of Zettlr (GPL v3)",
   "main": ".webpack/main",
   "type": "commonjs",
   "scripts": {

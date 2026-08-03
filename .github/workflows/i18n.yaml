@@ -2,8 +2,9 @@ name: i18n
 
 on:
   workflow_dispatch: {} # Enable manual triggers
-  schedule: # Run every Tuesday night at 02:17 (random minute to avoid high loads)
-    - cron: '17 2 * * TUE'
+  # Inherited from upstream Zettlr. Disabled in the Mint Stylus fork so this
+  # repository never auto-builds, auto-commits or auto-releases on a timer;
+  # run it by hand from the Actions tab instead. (edited by AI)
 
 permissions:
   contents: write

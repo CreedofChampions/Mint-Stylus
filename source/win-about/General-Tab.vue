@@ -11,6 +11,15 @@
     </p>
     <p>{{ dialogIntro }}</p>
 
+    <!-- edited by AI from here: GPL v3 notice of modification (§5a) + source offer (§6) -->
+    <p id="gpl-notice">
+      <strong>{{ forkNotice }}</strong>
+      <a href="https://github.com/Zettlr/Zettlr">github.com/Zettlr/Zettlr</a>.
+      {{ sourceOffer }}
+      <a href="https://github.com/CreedofChampions/Mint-Stylus">github.com/CreedofChampions/Mint-Stylus</a>.
+    </p>
+    <!-- edited by AI to here -->
+
     <div class="projects">
       <div class="flex">
         <a href="http://electronjs.org/">
@@ -103,6 +112,11 @@ const CSLInfo = trans('Mint Stylus makes use of citeproc to display citations di
 const nodeTrademark = trans('All logos and brand names are subject to their rightful owners. Besides using their code, Mint Stylus is in no way affiliated with any of these projects. Node.js is a trademark of Joyent, Inc.')
 const LanguageToolInfo = trans('Mint Stylus offers an integration with LanguageTool.org, a service provided by LanguageTooler GmbH. Using this service requires an internet connection and is subject to the privacy policy of LanguageTooler GmbH or the corresponding server that you use.')
 const ltPrivacyLinkLabel = trans('View the Privacy Policy by LanguageTooler GmbH')
+// edited by AI from here: GPL v3 requires a modified work to say so, with a date
+// (§5a), and to tell the people who receive binaries where the complete
+// corresponding source lives (§6).
+const forkNotice = trans('Mint Stylus is a modified version of Zettlr (Copyright © 2017–2026 Hendrik Erz / Zettlr GmbH), modified since 2026-07-01 and redistributed under the GNU GPL v3. It is not affiliated with, sponsored by, or endorsed by the Zettlr project. The original, unmodified program is available at')
+const sourceOffer = trans('The complete corresponding source code for this build, and the full text of the licence, are available at')
 </script>
 
 <style lang="less">

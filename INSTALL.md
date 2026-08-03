@@ -54,4 +54,11 @@ Needs Node 20+, `corepack enable` (yarn 4), and a C++ toolchain.
 See [`CHANGELOG-MintStylus.md`](./CHANGELOG-MintStylus.md) — or
 https://nibblet.net/downloads/mint-stylus/CHANGELOG.md
 
-Based on Zettlr (GPL v3). Free forever. Source: https://github.com/CreedofChampions/Mint-Stylus
+## Licence and source
+Mint Stylus is a **modified version of [Zettlr](https://github.com/Zettlr/Zettlr)**
+(Copyright © 2017–2026 Hendrik Erz / Zettlr GmbH), redistributed under the **GNU GPL v3**.
+It is not affiliated with or endorsed by the Zettlr project.
+
+Free forever. The complete corresponding source for every published build is at
+**https://github.com/CreedofChampions/Mint-Stylus** — see `NOTICE.md` there for the
+full legal notice.
