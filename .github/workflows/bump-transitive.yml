@@ -4,8 +4,9 @@ name: 'Update Transitive Dependencies'
 
 on:
   workflow_dispatch: {}
-  schedule: # Once a month, run the dependency updater
-    - cron: '0 20 1 * *'
+  # Inherited from upstream Zettlr. Disabled in the Mint Stylus fork so this
+  # repository never auto-builds, auto-commits or auto-releases on a timer;
+  # run it by hand from the Actions tab instead. (edited by AI)
 
 env:
   NODE_VERSION: '22'

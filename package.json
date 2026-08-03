@@ -1,18 +1,21 @@
 {
   "name": "mint-stylus",
   "productName": "Mint Stylus",
-  "homepage": "https://github.com/Relentless9/Mint-Stylus",
+  "homepage": "https://github.com/CreedofChampions/Mint-Stylus",
   "author": {
     "name": "Mint Stylus Team",
-    "email": "211402982+Relentless9@users.noreply.github.com"
+    "email": "269247302+CreedofChampions@users.noreply.github.com"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/Relentless9/Mint-Stylus.git"
+    "url": "git://github.com/CreedofChampions/Mint-Stylus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CreedofChampions/Mint-Stylus/issues"
   },
   "version": "4.8.8",
   "license": "GPL-3.0",
-  "description": "Your One-Stop Publication Workbench",
+  "description": "A Markdown writing app with AI baked in — a fork of Zettlr (GPL v3)",
   "main": ".webpack/main",
   "type": "commonjs",
   "scripts": {

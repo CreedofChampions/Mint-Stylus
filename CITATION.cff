@@ -1,11 +1,14 @@
 cff-version: 1.2.0
-message: You can cite Zettlr by using the following metadata
-title: Zettlr
-abstract: A Markdown Editor for the 21st century.
+message: >-
+  Mint Stylus is a modified version of Zettlr, redistributed under the GNU GPL v3.
+  If you cite this software, please also cite the original work by Hendrik Erz
+  (see the "references" section below).
+title: Mint Stylus
+abstract: >-
+  A Markdown writing app with an AI assistant built in. A fork of Zettlr; not
+  affiliated with or endorsed by the Zettlr project.
 authors:
-  - family-names: Erz
-    given-names: Hendrik
-    orcid: https://orcid.org/0000-0003-0775-5919
+  - name: The Mint Stylus contributors
 keywords:
   - electron
   - markdown
@@ -14,8 +17,21 @@ keywords:
   - GUI
   - editor
   - pandoc
-version: v4.6.0
-doi: 10.5281/zenodo.2580173
-date-released: 2026-06-14
+  - AI
+version: v4.8.8
 license: gpl-3.0
-repository-code: https://github.com/Zettlr/Zettlr
+repository-code: https://github.com/CreedofChampions/Mint-Stylus
+references:
+  - type: software
+    title: Zettlr
+    abstract: A Markdown Editor for the 21st century.
+    notes: >-
+      The original work that Mint Stylus modifies.
+      Copyright Hendrik Erz / Zettlr GmbH, GNU GPL v3.
+    authors:
+      - family-names: Erz
+        given-names: Hendrik
+        orcid: https://orcid.org/0000-0003-0775-5919
+    doi: 10.5281/zenodo.2580173
+    license: gpl-3.0
+    repository-code: https://github.com/Zettlr/Zettlr
